@@ -37,7 +37,7 @@ int windowHeight = 600;
 int windowHandle = 0;
 
 //initial camera position
-float camera_position[] = {0.0f, 0.0, 17.0f};
+float camera_position[] = {0.0f, 6.0, 17.0f};
 
 bool middleMouseButtonDown = false;
 bool leftMouseButtonDown = false;
@@ -50,7 +50,15 @@ float elapsed_virtual_time = 0.0;
 int last_elapsed_time = 0;
 float speed = 0.1;
 
-glm::mat4 gl_viewMatrix = glm::mat4(1.0);
+//navigation
+float last_mouse_x = 0;
+float last_mouse_y = 0;
+glm::mat4 g_viewMatrix = glm::mat4(1.0);
+float camera_x = 0;
+float camera_y = 0;
+glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f); 
+float g_movement_speed = .2f;
+
 //handles for shader variables
 unsigned projectionMatrixUniformLocation = 0;
 unsigned modelMatrixUniformLocation  = 0;
@@ -135,6 +143,8 @@ void loadModel(void);
 void setupShader();
 void draw(void);
 void renderFunction(void);
+glm::vec3 compute_viewing_direction(glm::mat4 matrix);
+void print_matrix(glm::mat4 matrix);
 
 void drawPlanet(glm::mat4 const& model_matrix);
 
@@ -143,7 +153,6 @@ void drawPlanet(glm::mat4 const& model_matrix);
 
 int main(int argc, char* argv[])
 {
-
 	initialize(argc, argv);
 
 	//start the glut event system
@@ -172,21 +181,21 @@ void compute_viewMatrix()
 	cameraTransformationStack.clear();
 
 	//translate the camera in positive z direction to actually see the geometry residing in the coordinate origin
+	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), camera_x, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -camera_y, glm::vec3(1.0f, 0.0f, 0.0f) ) );
     cameraTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), glm::vec3(camera_position[0], camera_position[1], camera_position[2]) ) );
     // cameraTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(camera_position[0], camera_position[1], camera_position[2]) ) );
 
 	//rotate the camera
-	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
 
 	//invert the camera transformation to move the vertices
-	gl_viewMatrix = glm::inverse(cameraTransformationStack.topMatrix() );
-
+	g_viewMatrix = glm::inverse(cameraTransformationStack.topMatrix() );
 
 	glUseProgram(shaderProgram);
-	glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(gl_viewMatrix) );
+	glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
 
 	glUseProgram(orbitShaderProgram);
-	glUniformMatrix4fv(orbitViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(gl_viewMatrix) );
+	glUniformMatrix4fv(orbitViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
 }
 
 void drawOrbits()
@@ -389,7 +398,6 @@ void drawSolarsystem()
 	//clear the transformation stack
 	modelTransformationStack.clear();
 
-
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
@@ -397,9 +405,30 @@ void drawSolarsystem()
 /////////////////////////////////////////////////////////////////////////////////////////
 void mouseInput(int button, int state, int x, int y)
 {
-  //handle mouse input here
+	if(button == GLUT_LEFT_BUTTON)
+	{
+		if(state == GLUT_UP)
+		{
+			last_mouse_x = 0;
+			last_mouse_y = 0;
+		}
+	}
 }
 
+void mouseMovement(int x, int y)
+{
+	if(last_mouse_x != 0)
+	{
+		camera_x = camera_x + last_mouse_x - (float)x;
+	}
+	last_mouse_x = x;
+
+	if(last_mouse_y != 0)
+	{
+		camera_y = camera_y + last_mouse_y - (float)y;
+	}
+	last_mouse_y = y;
+}
 /////////////////////////////////////////////////////////////////////////////////////////
 void specialKeyRelease(int keyEvent, int x, int y)
 {
@@ -429,13 +458,36 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 		cleanup();
 		glutExit();
 	}
+	if(keyEvent == 'a' || keyEvent == 'A')
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += g_viewing_direction[2] * g_movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] += -g_viewing_direction[0] * g_movement_speed;
+	}
+	if(keyEvent == 'd' || keyEvent == 'D')
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += -g_viewing_direction[2] * g_movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] += g_viewing_direction[0] * g_movement_speed;
+	}
 	if(keyEvent == 'w' || keyEvent == 'W')
 	{
-		camera_position[2] -= 2.0;
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		glm::vec3 movement_direction = glm::vec3(g_viewing_direction[0], 0, g_viewing_direction[2]);
+		camera_position[0] += movement_direction[0] * g_movement_speed;
+		camera_position[1] += movement_direction[1] * g_movement_speed;
+		camera_position[2] += movement_direction[2] * g_movement_speed;
 	}
 	if(keyEvent == 's' || keyEvent == 'S')
 	{
-		camera_position[2] += 2.0;
+
+	    // print_matrix(cameraTransformationStack.topMatrix());
+	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] -= g_viewing_direction[0] * g_movement_speed;
+		camera_position[1] -= g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] -= g_viewing_direction[2] * g_movement_speed;
 	}
 	if(keyEvent == 'q' || keyEvent == 'Q')
 	{
@@ -744,6 +796,7 @@ void initWindow(int argc, char* argv[])
 	//GLUT function callbacks. This means: register functions which are called for the specific glut events. Mind the function signature!
 	//??
 	glutMouseFunc(mouseInput);
+	glutMotionFunc(mouseMovement);
 	//??
 	glutSpecialFunc(specialKeyPress);
 	//??
@@ -814,7 +867,7 @@ void drawPlanet(glm::mat4 const& model_matrix)
 
 		//calculate the normal transfomrations from modelview matrix
 	    glm::mat4 normalMatrix = glm::mat4(1.0f);
-		normalMatrix = gl_viewMatrix*modelTransformationStack.topMatrix();
+		normalMatrix = g_viewMatrix*modelTransformationStack.topMatrix();
 		normalMatrix = glm::inverse(normalMatrix);
 		normalMatrix = glm::transpose(normalMatrix);
 
@@ -827,4 +880,19 @@ void drawPlanet(glm::mat4 const& model_matrix)
 		// draw object according to (the EAO!). Note, that the geometry type is triangles.
 		glDrawElements(GL_TRIANGLES, mesh->getTriangles().size()*3, GL_UNSIGNED_INT, 0);
 
+}
+
+glm::vec3 compute_viewing_direction(glm::mat4 matrix)
+{
+	std::cout << -matrix[2][0] << " " << -matrix[2][1] << " " << -matrix[2][2] << std::endl << std::endl;
+	return glm::vec3(-matrix[2][0], -matrix[2][1], -matrix[2][2]);
+}
+
+void print_matrix(glm::mat4 matrix)
+{
+	// std::cout << matrix[0][0] << " " << matrix[1][0] << " " << matrix[2][0] << " " << matrix[3][0] << std::endl;
+	// std::cout << matrix[0][1] << " " << matrix[1][1] << " " << matrix[2][1] << " " << matrix[3][1] << std::endl;
+	// std::cout << matrix[0][2] << " " << matrix[1][2] << " " << matrix[2][2] << " " << matrix[3][2] << std::endl;
+	// std::cout << matrix[0][3] << " " << matrix[1][3] << " " << matrix[2][3] << " " << matrix[3][3] << std::endl << std::endl;
+	// std::cout << -matrix[2][0] << " " << -matrix[2][1] << " " << -matrix[2][2] << std::endl << std::endl;
 }
