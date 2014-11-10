@@ -59,6 +59,11 @@ float camera_y = 0;
 glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f); 
 float g_movement_speed = 0.2f;
 
+bool g_key_w = false;
+bool g_key_s = false;
+bool g_key_a = false;
+bool g_key_d = false;
+
 //handles for shader variables
 unsigned projectionMatrixUniformLocation = 0;
 unsigned modelMatrixUniformLocation  = 0;
@@ -157,7 +162,7 @@ void draw(void);
 void renderFunction(void);
 glm::vec3 compute_viewing_direction(glm::mat4 matrix);
 void print_matrix(glm::mat4 matrix);
-
+void navigate();
 void drawPlanet(glm::mat4 const& model_matrix);
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -180,11 +185,45 @@ int main(int argc, char* argv[])
 //called every frame this functions draw
 void draw(void)
 {
+	navigate();
 	compute_viewMatrix();
 	drawSolarsystem();
 	if(g_draw_orbits)
 	{
 		drawOrbits();
+	}
+}
+
+void navigate()
+{
+	if(g_key_w)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += g_viewing_direction[0] * g_movement_speed;
+		camera_position[1] += g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] += g_viewing_direction[2] * g_movement_speed;
+	}
+	
+	if(g_key_s)
+	{
+	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] -= g_viewing_direction[0] * g_movement_speed;
+		camera_position[1] -= g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] -= g_viewing_direction[2] * g_movement_speed;
+	}
+	if(g_key_a)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += g_viewing_direction[2] * g_movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] += -g_viewing_direction[0] * g_movement_speed;
+	}
+	if(g_key_d)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += -g_viewing_direction[2] * g_movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
+		camera_position[2] += g_viewing_direction[0] * g_movement_speed;
 	}
 }
 
@@ -487,36 +526,21 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 		cleanup();
 		glutExit();
 	}
-	if(keyEvent == 'a' || keyEvent == 'A')
-	{
-		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] += g_viewing_direction[2] * g_movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] += -g_viewing_direction[0] * g_movement_speed;
-	}
-	if(keyEvent == 'd' || keyEvent == 'D')
-	{
-		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] += -g_viewing_direction[2] * g_movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] += g_viewing_direction[0] * g_movement_speed;
-	}
 	if(keyEvent == 'w' || keyEvent == 'W')
 	{
-		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		glm::vec3 movement_direction = glm::vec3(g_viewing_direction[0], 0, g_viewing_direction[2]);
-		camera_position[0] += movement_direction[0] * g_movement_speed;
-		camera_position[1] += movement_direction[1] * g_movement_speed;
-		camera_position[2] += movement_direction[2] * g_movement_speed;
+		g_key_w = false;
 	}
 	if(keyEvent == 's' || keyEvent == 'S')
 	{
-
-	    // print_matrix(cameraTransformationStack.topMatrix());
-	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] -= g_viewing_direction[0] * g_movement_speed;
-		camera_position[1] -= g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] -= g_viewing_direction[2] * g_movement_speed;
+		g_key_s = false;
+	}
+	if(keyEvent == 'a' || keyEvent == 'A')
+	{
+		g_key_a = false;
+	}
+	if(keyEvent == 'd' || keyEvent == 'D')
+	{
+		g_key_d = false;
 	}
 	if(keyEvent == 'q' || keyEvent == 'Q')
 	{
@@ -534,7 +558,24 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 void keyPress(unsigned char keyEvent, int x, int y)
-{}
+{
+	if(keyEvent == 'w' || keyEvent == 'W')
+	{
+		g_key_w = true;
+	}
+	if(keyEvent == 's' || keyEvent == 'S')
+	{
+		g_key_s = true;
+	}
+	if(keyEvent == 'a' || keyEvent == 'A')
+	{
+		g_key_a = true;
+	}
+	if(keyEvent == 'd' || keyEvent == 'D')
+	{
+		g_key_d = true;
+	}
+}
 
 
 
@@ -913,7 +954,7 @@ void drawPlanet(glm::mat4 const& model_matrix)
 
 glm::vec3 compute_viewing_direction(glm::mat4 matrix)
 {
-	std::cout << -matrix[2][0] << " " << -matrix[2][1] << " " << -matrix[2][2] << std::endl << std::endl;
+	// std::cout << -matrix[2][0] << " " << -matrix[2][1] << " " << -matrix[2][2] << std::endl << std::endl;
 	return glm::vec3(-matrix[2][0], -matrix[2][1], -matrix[2][2]);
 }
 
