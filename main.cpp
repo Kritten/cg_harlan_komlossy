@@ -58,11 +58,14 @@ float camera_x = 0;
 float camera_y = 0;
 glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f); 
 float g_movement_speed = 0.2f;
+float g_mouse_speed = 0.4f;
+float g_key_shift_multiplicator = 3.0f;
 
 bool g_key_w = false;
 bool g_key_s = false;
 bool g_key_a = false;
 bool g_key_d = false;
+bool g_key_shift = false;
 
 //handles for shader variables
 unsigned projectionMatrixUniformLocation = 0;
@@ -196,34 +199,39 @@ void draw(void)
 
 void navigate()
 {
+	float movement_speed = g_movement_speed;
+	if(g_key_shift)
+	{
+		movement_speed = g_key_shift_multiplicator * movement_speed;
+	}
 	if(g_key_w)
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] += g_viewing_direction[0] * g_movement_speed;
-		camera_position[1] += g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] += g_viewing_direction[2] * g_movement_speed;
+		camera_position[0] += g_viewing_direction[0] * movement_speed;
+		camera_position[1] += g_viewing_direction[1] * movement_speed;
+		camera_position[2] += g_viewing_direction[2] * movement_speed;
 	}
 	
 	if(g_key_s)
 	{
 	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] -= g_viewing_direction[0] * g_movement_speed;
-		camera_position[1] -= g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] -= g_viewing_direction[2] * g_movement_speed;
+		camera_position[0] -= g_viewing_direction[0] * movement_speed;
+		camera_position[1] -= g_viewing_direction[1] * movement_speed;
+		camera_position[2] -= g_viewing_direction[2] * movement_speed;
 	}
 	if(g_key_a)
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] += g_viewing_direction[2] * g_movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] += -g_viewing_direction[0] * g_movement_speed;
+		camera_position[0] += g_viewing_direction[2] * movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * movement_speed;
+		camera_position[2] += -g_viewing_direction[0] * movement_speed;
 	}
 	if(g_key_d)
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
-		camera_position[0] += -g_viewing_direction[2] * g_movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * g_movement_speed;
-		camera_position[2] += g_viewing_direction[0] * g_movement_speed;
+		camera_position[0] += -g_viewing_direction[2] * movement_speed;
+		// camera_position[1] += g_viewing_direction[1] * movement_speed;
+		camera_position[2] += g_viewing_direction[0] * movement_speed;
 	}
 }
 
@@ -232,8 +240,8 @@ void compute_viewMatrix()
 	cameraTransformationStack.clear();
 
 	//translate the camera in positive z direction to actually see the geometry residing in the coordinate origin
-	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), camera_x, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -camera_y, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+	cameraTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), camera_x, glm::vec3(0.0f, 1.0f, 0.0f) ) );
     cameraTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), glm::vec3(camera_position[0], camera_position[1], camera_position[2]) ) );
     // cameraTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(camera_position[0], camera_position[1], camera_position[2]) ) );
 
@@ -487,13 +495,18 @@ void mouseMovement(int x, int y)
 {
 	if(last_mouse_x != 0)
 	{
-		camera_x = camera_x + last_mouse_x - (float)x;
+		float new_camera_x = camera_x + (last_mouse_x - (float)x) * g_mouse_speed;
+		camera_x = new_camera_x;
 	}
 	last_mouse_x = x;
 
 	if(last_mouse_y != 0)
 	{
-		camera_y = camera_y + last_mouse_y - (float)y;
+		float new_camera_y = camera_y + (last_mouse_y - (float)y) * g_mouse_speed;
+		if(new_camera_y >= -90 && new_camera_y <= 90)
+		{
+			camera_y = new_camera_y;
+		}
 	}
 	last_mouse_y = y;
 }
@@ -554,6 +567,10 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	{
 		g_draw_orbits = !g_draw_orbits;
 	}
+	if(glutGetModifiers() != GLUT_ACTIVE_SHIFT)
+	{
+		g_key_shift = false;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -574,6 +591,10 @@ void keyPress(unsigned char keyEvent, int x, int y)
 	if(keyEvent == 'd' || keyEvent == 'D')
 	{
 		g_key_d = true;
+	}
+	if(glutGetModifiers() == GLUT_ACTIVE_SHIFT)
+	{
+		g_key_shift = true;
 	}
 }
 
@@ -815,7 +836,7 @@ void resizeFunction(int Width, int Height)
 	glViewport(0, 0, windowWidth, windowHeight);
 
 	                           //create a projection matrix
-	glm::mat4 projectionMatrix = glm::perspective(90.0f, //FOV 60.0°
+	glm::mat4 projectionMatrix = glm::perspective(60.0f, //FOV 60.0°
 		                                         (float)windowWidth/windowHeight, //aspect ratio of the projection
 												 1.0f, //near clipping plane
 												 100.0f); //far clipping plane
