@@ -8,14 +8,14 @@ out vec3 passed_color;
 uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
-uniform mat4 NormalMatrix;
+uniform vec3 OrbitColor;
 
 
 void main(void)
 {
 	vec4 vertexPos = vec4(in_Position, 1.0);
-	vec4 test_pos = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vertexPos;
-	passed_color = vec3(test_pos.xyz);
-	gl_Position = test_pos;
+	vertexPos = (ProjectionMatrix  * ViewMatrix * ModelMatrix) * vertexPos;
+	passed_color = OrbitColor;
+	gl_Position = vertexPos;
 
 }
