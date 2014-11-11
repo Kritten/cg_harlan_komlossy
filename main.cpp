@@ -60,18 +60,23 @@ glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f);
 float g_movement_speed = 0.2f;
 float g_mouse_speed = 0.4f;
 float g_key_shift_multiplicator = 3.0f;
+float g_ascending_speed = 0.3;
+float g_descending_speed = 0.3;
 
 bool g_key_w = false;
 bool g_key_s = false;
 bool g_key_a = false;
 bool g_key_d = false;
 bool g_key_shift = false;
+bool g_key_ctrl = false;
+bool g_key_space = false;
 
 //handles for shader variables
 unsigned projectionMatrixUniformLocation = 0;
 unsigned modelMatrixUniformLocation  = 0;
 unsigned viewMatrixUniformLocation = 0;
 unsigned normalMatrixUniformLocation     = 0;
+unsigned planetColorUniformLocation = 0;
 
 unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
@@ -233,6 +238,15 @@ void navigate()
 		// camera_position[1] += g_viewing_direction[1] * movement_speed;
 		camera_position[2] += g_viewing_direction[0] * movement_speed;
 	}
+	if(g_key_space)
+	{
+		camera_position[1] += g_ascending_speed;
+	}
+	if(g_key_ctrl)
+	{
+		camera_position[1] -= g_descending_speed;
+	}
+	
 }
 
 void compute_viewMatrix()
@@ -358,6 +372,7 @@ void drawSolarsystem()
 	//scale the sun
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 1.5f, 1.5f, 0.0f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -370,6 +385,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_mercuryRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.48f, 0.48f, 0.48f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -382,6 +398,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_venusRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.97f, 0.65f, 0.22f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -394,6 +411,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_earthRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.35f, 0.48f, 0.820f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -410,6 +428,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_earthRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -422,6 +441,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_marsRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.76f, 0.58f, 0.34f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -434,6 +454,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.84f, 0.71f, 0.53f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -446,6 +467,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_saturnRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.81f, 0.71f, 0.55f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -458,6 +480,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_uranusRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.44f, 0.62f, 0.67f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -470,6 +493,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_neptunRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.24f, 0.39f, 0.86f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -502,7 +526,7 @@ void mouseMovement(int x, int y)
 
 	if(last_mouse_y != 0)
 	{
-		float new_camera_y = camera_y + (last_mouse_y - (float)y) * g_mouse_speed;
+		float new_camera_y = camera_y - (last_mouse_y - (float)y) * g_mouse_speed;
 		if(new_camera_y >= -90 && new_camera_y <= 90)
 		{
 			camera_y = new_camera_y;
@@ -571,6 +595,14 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	{
 		g_key_shift = false;
 	}
+	if(glutGetModifiers() == GLUT_ACTIVE_CTRL)
+	{
+		g_key_ctrl = false;
+	}
+	if(keyEvent == ' ')
+	{
+		g_key_space = false;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -595,6 +627,14 @@ void keyPress(unsigned char keyEvent, int x, int y)
 	if(glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 	{
 		g_key_shift = true;
+	}
+	if(glutGetModifiers() == GLUT_ACTIVE_CTRL)
+	{
+		g_key_ctrl = true;
+	}
+	if(keyEvent == ' ')
+	{
+		g_key_space = true;
 	}
 }
 
@@ -672,10 +712,11 @@ void setupShader()
 
 
 	//obtain shader variable locations
-	modelMatrixUniformLocation  = glGetUniformLocation(shaderProgram, "ModelMatrix");
-	viewMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ViewMatrix");
+	modelMatrixUniformLocation      = glGetUniformLocation(shaderProgram, "ModelMatrix");
+	viewMatrixUniformLocation       = glGetUniformLocation(shaderProgram, "ViewMatrix");
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
+	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "PlanetColor");
 
 	//obtain shader variable locations
 	orbitModelMatrixUniformLocation  = glGetUniformLocation(orbitShaderProgram, "ModelMatrix");
@@ -690,7 +731,6 @@ void setupShader()
 
 void loadModel()
 {
-
 	//load a wavefront *.obj file
 	gloost::ObjLoader loader("../../../data/objects/sphere.obj");
 	mesh = loader.getMesh();
