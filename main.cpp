@@ -374,7 +374,7 @@ void drawSolarsystem()
 	//scale the sun
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 1.5f, 1.5f, 0.0f);
+	glUniform3f(planetColorUniformLocation, 10.5f, 10.5f, 0.0f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -551,7 +551,7 @@ void specialKeyPress(int keyEvent, int x, int y)
 /////////////////////////////////////////////////////////////////////////////////////////
 void keyRelease(unsigned char keyEvent, int x, int y)
 {
-	if(keyEvent == ' ')
+	if(keyEvent == 'r')
 	{
 		setupShader();
 	    resizeFunction(windowWidth, windowHeight);
@@ -583,11 +583,9 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	}
 	if(keyEvent == '1')
 	{
-		g_speed *= 0.8;
 	}
 	if(keyEvent == '2')
 	{
-		g_speed *= 1.2;
 	}
 	if(keyEvent == 'q' || keyEvent == 'Q')
 	{
@@ -596,6 +594,14 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	if(keyEvent == 'e' || keyEvent == 'E')
 	{
 		g_key_e = false;
+	}
+	if(keyEvent == 'x' || keyEvent == 'X')
+	{
+		g_speed *= 0.8;
+	}
+	if(keyEvent == 'c' || keyEvent == 'C')
+	{
+		g_speed *= 1.2;
 	}
 	if(keyEvent == 'o' || keyEvent == 'O')
 	{
@@ -995,7 +1001,7 @@ void initialize(int argc, char* argv[])
 
 	glGetError();
 	//set color to clear the frame buffer with
-	glClearColor(0.20f, 0.2f, 0.2f, 0.0f);
+	glClearColor(0.05f, 0.05f, 0.05f, 0.0f);
 
 	//enable depth testing
 	glEnable(GL_DEPTH_TEST);
