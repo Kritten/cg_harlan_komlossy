@@ -67,6 +67,8 @@ bool g_key_w = false;
 bool g_key_s = false;
 bool g_key_a = false;
 bool g_key_d = false;
+bool g_key_q = false;
+bool g_key_e = false;
 bool g_key_shift = false;
 bool g_key_ctrl = false;
 bool g_key_space = false;
@@ -238,11 +240,11 @@ void navigate()
 		// camera_position[1] += g_viewing_direction[1] * movement_speed;
 		camera_position[2] += g_viewing_direction[0] * movement_speed;
 	}
-	if(g_key_space)
+	if(g_key_q)
 	{
 		camera_position[1] += g_ascending_speed;
 	}
-	if(g_key_ctrl)
+	if(g_key_e)
 	{
 		camera_position[1] -= g_descending_speed;
 	}
@@ -579,13 +581,21 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	{
 		g_key_d = false;
 	}
-	if(keyEvent == 'q' || keyEvent == 'Q')
+	if(keyEvent == '1')
 	{
 		g_speed *= 0.8;
 	}
-	if(keyEvent == 'e' || keyEvent == 'E')
+	if(keyEvent == '2')
 	{
 		g_speed *= 1.2;
+	}
+	if(keyEvent == 'q' || keyEvent == 'Q')
+	{
+		g_key_q = false;
+	}
+	if(keyEvent == 'e' || keyEvent == 'E')
+	{
+		g_key_e = false;
 	}
 	if(keyEvent == 'o' || keyEvent == 'O')
 	{
@@ -623,6 +633,14 @@ void keyPress(unsigned char keyEvent, int x, int y)
 	if(keyEvent == 'd' || keyEvent == 'D')
 	{
 		g_key_d = true;
+	}
+	if(keyEvent == 'q' || keyEvent == 'Q')
+	{
+		g_key_q = true;
+	}
+	if(keyEvent == 'e' || keyEvent == 'E')
+	{
+		g_key_e = true;
 	}
 	if(glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 	{
