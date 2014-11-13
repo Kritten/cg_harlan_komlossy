@@ -21,8 +21,8 @@ void main(void)
 
 	passed_vs_position = vec3(vs_position.xyz);
 
-	// passed_normal = normalize(NormalMatrix * vec4(vertexPos.xyz , 0.0));
-	passed_normal = normalize(NormalMatrix * vec4(in_Normal, 0.0));
+	passed_normal = normalize(NormalMatrix * vec4(vertexPos.xyz , 0.0));
+	// passed_normal = normalize(NormalMatrix * vec4(in_Normal, 0.0));
 	
 	passed_normal = vec4(normalize(passed_normal.xyz), 0.0);
 }
