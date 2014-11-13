@@ -79,6 +79,7 @@ unsigned modelMatrixUniformLocation  = 0;
 unsigned viewMatrixUniformLocation = 0;
 unsigned normalMatrixUniformLocation     = 0;
 unsigned planetColorUniformLocation = 0;
+unsigned lightPositionUniformLocation = 0;
 
 unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
@@ -155,6 +156,7 @@ float g_ganymedeRotation = 0.0f;
 float g_callistoRotation = 0.0f;
 
 int g_num_of_saturn_rings = 100;
+int g_num_of_uranus_rings = 30;
 
 //the three different matrices for projection, viewing and model transforming
 
@@ -172,6 +174,7 @@ void drawSolarsystem();
 void draw_jupiter_moons();
 void drawOrbits();
 void draw_saturn_rings();
+void draw_uranus_rings();
 void generateOrbit();
 
 void mouseInput(int button, int state, int x, int y);
@@ -217,8 +220,9 @@ void draw(void)
 	if(g_draw_orbits)
 	{
 		drawOrbits();
-		draw_saturn_rings();
 	}
+	draw_saturn_rings();
+	draw_uranus_rings();
 }
 
 void navigate()
@@ -340,6 +344,42 @@ void drawOrbits()
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
+    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_ioTranslate.x)) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+
+	modelTransformationStack.clear();
+    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_europaTranslate.x)) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+
+	modelTransformationStack.clear();
+    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_ganymedeTranslate.x)) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+
+	modelTransformationStack.clear();
+    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_callistoTranslate.x)) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+
+	modelTransformationStack.clear();
     modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_saturnTranslate.x)) );
     modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
@@ -365,13 +405,17 @@ void drawOrbits()
 
 void draw_saturn_rings()
 {
+	glUseProgram(orbitShaderProgram);
+	glBindVertexArray(orbitVertexArrayObject);
+
 	float saturn_ring_parts = g_num_of_saturn_rings/10;
 	for(int i = 0; i < g_num_of_saturn_rings; i++)
 	{
 		modelTransformationStack.clear();
 	    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(1.7+i*0.009)) );
 	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
-	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), 45.0f, glm::vec3(0.0f, 0.0f, 1.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), 30.0f, glm::vec3(0.0f, 0.0f, 1.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -g_saturnRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_saturnTranslate ) );
 		modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_saturnRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 		glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
@@ -382,6 +426,31 @@ void draw_saturn_rings()
 		else if(i<saturn_ring_parts*8) glUniform3f(orbitColorUniformLocation, 0.33f, 0.29f, 0.22f);
 		else if(i<saturn_ring_parts*9) glUniform3f(orbitColorUniformLocation, 0.57f, 0.51f, 0.43f);
 		else glUniform3f(orbitColorUniformLocation, 0.83f, 0.73f, 0.61f);
+
+		glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+	}
+
+	modelTransformationStack.clear();
+}
+
+void draw_uranus_rings()
+{
+	glUseProgram(orbitShaderProgram);
+	glBindVertexArray(orbitVertexArrayObject);
+
+	float uranus_ring_parts = g_num_of_uranus_rings/3;
+	for(int i = 0; i < g_num_of_uranus_rings; i++)
+	{
+		modelTransformationStack.clear();
+	    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(1.5+i*0.009)) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -g_uranusRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_uranusTranslate ) );
+		modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_uranusRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+		glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+		if(i<uranus_ring_parts*1) glUniform3f(orbitColorUniformLocation, 0.13f, 0.20f, 0.35f);
+		else if(i<uranus_ring_parts*2) glUniform3f(orbitColorUniformLocation, 0.08f, 0.12f, 0.23f);
+		else glUniform3f(orbitColorUniformLocation, 0.05f, 0.10f, 0.19f);
 
 		glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 	}
@@ -417,11 +486,20 @@ void drawSolarsystem()
 
 	glUseProgram(shaderProgram);
 
+
+    // modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_ioScale) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_europaTranslate ) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_europaRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
+    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+    glUniform3f(lightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
+    modelTransformationStack.clear();
+
 	//sun
 	//scale the sun
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 10.5f, 10.5f, 0.0f);
+	glUniform3f(planetColorUniformLocation, 10.5f, 10.5f, 0.4f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -531,7 +609,7 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_uranusRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 0.44f, 0.62f, 0.67f);
+	glUniform3f(planetColorUniformLocation, 0.15f, 0.24f, 0.40f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -572,8 +650,8 @@ void draw_jupiter_moons()
 	//clear the transformation stack
 	modelTransformationStack.clear();
 
-    //jupitermoon Io
-	//scale Io
+    //jupitermoon Europa
+	//scale Europa
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_europaScale) ) );
 	//translate the earthmoon
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_europaTranslate ) );
@@ -589,8 +667,8 @@ void draw_jupiter_moons()
 	//clear the transformation stack
 	modelTransformationStack.clear();
 
-    //jupitermoon Io
-	//scale Io
+    //jupitermoon Ganymede
+	//scale Ganymede
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_ganymedeScale) ) );
 	//translate the earthmoon
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_ganymedeTranslate ) );
@@ -606,8 +684,8 @@ void draw_jupiter_moons()
 	//clear the transformation stack
 	modelTransformationStack.clear();
 
-    //jupitermoon Io
-	//scale Io
+    //jupitermoon Callisto
+	//scale Callisto
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_callistoScale) ) );
 	//translate the earthmoon
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_callistoTranslate ) );
@@ -861,6 +939,7 @@ void setupShader()
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
 	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "PlanetColor");
+	lightPositionUniformLocation 	= glGetUniformLocation(shaderProgram, "LightPosition");
 
 	//obtain shader variable locations
 	orbitModelMatrixUniformLocation  = glGetUniformLocation(orbitShaderProgram, "ModelMatrix");
