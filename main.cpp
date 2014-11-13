@@ -108,39 +108,53 @@ unsigned fragmentShader = 0;
 
 
 // Scales
-float g_neptunScale = 1.1;
+float g_neptunScale = 1.8;
 float g_uranusScale = 2.0;
-float g_saturnScale = 1.7;
-float g_jupiterScale = 0.9;
-float g_marsScale = 0.9;
-float g_earthScale = 1.1;
-float g_venusScale = 0.7;
+float g_saturnScale = 2.8;
+float g_jupiterScale = 3.0;
+float g_marsScale = 0.6;
+float g_earthScale = 1.0;
+float g_venusScale = 0.9;
 float g_mercuryScale = 0.5;
 float g_sunScale = 3.0;
 float g_earthMoonScale = 0.2;
+float g_ioScale = 0.2;
+float g_europaScale = 0.2;
+float g_ganymedeScale = 0.2;
+float g_callistoScale = 0.2;
 
 // Translations
-glm::vec3 g_neptunTranslate = glm::vec3(19.0f, 0.0f, 0.0f);
-glm::vec3 g_uranusTranslate = glm::vec3(17.0f, 0.0f, 0.0f);
-glm::vec3 g_saturnTranslate = glm::vec3(15.0f, 0.0f, 0.0f);
-glm::vec3 g_jupiterTranslate = glm::vec3(13.0f, 0.0f, 0.0f);
+glm::vec3 g_neptunTranslate = glm::vec3(30.0f, 0.0f, 0.0f);
+glm::vec3 g_uranusTranslate = glm::vec3(25.0f, 0.0f, 0.0f);
+glm::vec3 g_saturnTranslate = glm::vec3(20.0f, 0.0f, 0.0f);
+glm::vec3 g_jupiterTranslate = glm::vec3(15.0f, 0.0f, 0.0f);
 glm::vec3 g_marsTranslate = glm::vec3(11.0f, 0.0f, 0.0f);
 glm::vec3 g_earthTranslate = glm::vec3(9.0f, 0.0f, 0.0f);
 glm::vec3 g_mercuryTranslate = glm::vec3(5.0f, 0.0f, 0.0f);
 glm::vec3 g_venusTranslate = glm::vec3(7.0f, 0.0f, 0.0f);
 glm::vec3 g_earthMoonTranslate = glm::vec3(1.0f, 0.0f, 0.0f);
+glm::vec3 g_ioTranslate = glm::vec3(1.8f, 0.0f, 0.0f);
+glm::vec3 g_europaTranslate = glm::vec3(2.1f, 0.0f, 0.0f);
+glm::vec3 g_ganymedeTranslate = glm::vec3(2.5f, 0.0f, 0.0f);
+glm::vec3 g_callistoTranslate = glm::vec3(2.8f, 0.0f, 0.0f);
 
 // Rotations 
- float g_neptunRotation  = 0.0f;
- float g_uranusRotation  = 0.0f;
- float g_saturnRotation  = 0.0f;
- float g_jupiterRotation = 0.0f;
- float g_marsRotation    = 0.0f;
- float g_earthRotation   = 0.0f;
- float g_venusRotation   = 0.0f;
- float g_mercuryRotation = 0.0f;
+float g_neptunRotation  = 0.0f;
+float g_uranusRotation  = 0.0f;
+float g_saturnRotation  = 0.0f;
+float g_jupiterRotation = 0.0f;
+float g_marsRotation    = 0.0f;
+float g_earthRotation   = 0.0f;
+float g_venusRotation   = 0.0f;
+float g_mercuryRotation = 0.0f;
 
- float g_earthMoonRotation = 0.0f;
+float g_earthMoonRotation = 0.0f;
+float g_ioRotation  = 0.0f;
+float g_europaRotation = 0.0f;
+float g_ganymedeRotation = 0.0f;
+float g_callistoRotation = 0.0f;
+
+int g_num_of_saturn_rings = 100;
 
 //the three different matrices for projection, viewing and model transforming
 
@@ -155,7 +169,9 @@ void idleFunction(void);
 void compute_viewMatrix();
 //forward declaration of functions
 void drawSolarsystem();
+void draw_jupiter_moons();
 void drawOrbits();
+void draw_saturn_rings();
 void generateOrbit();
 
 void mouseInput(int button, int state, int x, int y);
@@ -201,6 +217,7 @@ void draw(void)
 	if(g_draw_orbits)
 	{
 		drawOrbits();
+		draw_saturn_rings();
 	}
 }
 
@@ -346,6 +363,32 @@ void drawOrbits()
 	modelTransformationStack.clear();
 }
 
+void draw_saturn_rings()
+{
+	float saturn_ring_parts = g_num_of_saturn_rings/10;
+	for(int i = 0; i < g_num_of_saturn_rings; i++)
+	{
+		modelTransformationStack.clear();
+	    modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(1.7+i*0.009)) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), 45.0f, glm::vec3(0.0f, 0.0f, 1.0f) ) );
+	    modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_saturnTranslate ) );
+		modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_saturnRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
+		glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
+		if(i<saturn_ring_parts*2) glUniform3f(orbitColorUniformLocation, 0.25f, 0.23f, 0.22f);
+		else if(i<saturn_ring_parts*3) glUniform3f(orbitColorUniformLocation, 0.38f, 0.35f, 0.33f);
+		else if(i<saturn_ring_parts*4) glUniform3f(orbitColorUniformLocation, 0.65f, 0.58f, 0.50f);
+		else if(i<saturn_ring_parts*6) glUniform3f(orbitColorUniformLocation, 0.58f, 0.51f, 0.41f);
+		else if(i<saturn_ring_parts*8) glUniform3f(orbitColorUniformLocation, 0.33f, 0.29f, 0.22f);
+		else if(i<saturn_ring_parts*9) glUniform3f(orbitColorUniformLocation, 0.57f, 0.51f, 0.43f);
+		else glUniform3f(orbitColorUniformLocation, 0.83f, 0.73f, 0.61f);
+
+		glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
+	}
+
+	modelTransformationStack.clear();
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 void drawSolarsystem()
@@ -367,6 +410,10 @@ void drawSolarsystem()
 	g_mercuryRotation = g_venusRotation  *2.5;
 
 	g_earthMoonRotation = g_earthRotation*12.0;
+	g_ioRotation = g_jupiterRotation*30.0;
+	g_europaRotation = g_jupiterRotation*25.0;
+	g_ganymedeRotation = g_jupiterRotation*20.0;
+	g_callistoRotation = g_jupiterRotation*15.0;
 
 	glUseProgram(shaderProgram);
 
@@ -461,6 +508,8 @@ void drawSolarsystem()
 	//clear the transformation stack
 	modelTransformationStack.clear();
 
+	draw_jupiter_moons();
+
 	//saturn
 	//scale the saturn
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_saturnScale) ) );
@@ -502,6 +551,77 @@ void drawSolarsystem()
 
 	glBindVertexArray(0);
 	glUseProgram(0);
+}
+
+void draw_jupiter_moons()
+{
+    //jupitermoon Io
+	//scale Io
+	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_ioScale) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_ioTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_ioRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
+    drawPlanet(modelTransformationStack.topMatrix());
+	//clear the transformation stack
+	modelTransformationStack.clear();
+
+    //jupitermoon Io
+	//scale Io
+	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_europaScale) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_europaTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_europaRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
+    drawPlanet(modelTransformationStack.topMatrix());
+	//clear the transformation stack
+	modelTransformationStack.clear();
+
+    //jupitermoon Io
+	//scale Io
+	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_ganymedeScale) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_ganymedeTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_ganymedeRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
+    drawPlanet(modelTransformationStack.topMatrix());
+	//clear the transformation stack
+	modelTransformationStack.clear();
+
+    //jupitermoon Io
+	//scale Io
+	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_callistoScale) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_callistoTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_callistoRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//translate the earthmoon
+	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
+	//rotate it slowly around the y-axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
+	//draw the geometry
+	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
+    drawPlanet(modelTransformationStack.topMatrix());
+	//clear the transformation stack
+	modelTransformationStack.clear();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
