@@ -12,7 +12,7 @@ in  vec3 passed_vs_position;
 
 out vec4 out_Color;
 
-float ka = 0.2f;
+float ka = 0.06f;
 float sun_kd = 0.5f;
 float sun_ks = 1.0f;
 float light_kd = 0.5f;

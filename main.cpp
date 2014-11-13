@@ -1218,7 +1218,7 @@ void initialize(int argc, char* argv[])
 
 	glGetError();
 	//set color to clear the frame buffer with
-	glClearColor(0.23f, 0.23f, 0.23f, 0.0f);
+	glClearColor(0.07f, 0.07f, 0.07f, 0.0f);
 
 	//enable depth testing
 	glEnable(GL_DEPTH_TEST);
