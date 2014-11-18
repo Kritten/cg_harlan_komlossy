@@ -86,6 +86,7 @@ unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
 unsigned orbitViewMatrixUniformLocation = 0;
 unsigned orbitColorUniformLocation     = 0;
+unsigned orbitLightPositionUniformLocation = 0;
 
 
 //handles for all sort of geometry objects
@@ -299,6 +300,7 @@ void compute_viewMatrix()
 void drawOrbits()
 {
 	glUseProgram(orbitShaderProgram);
+
 	glBindVertexArray(orbitVertexArrayObject);
 
 	modelTransformationStack.clear();
@@ -328,7 +330,7 @@ void drawOrbits()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_earthTranslate ) );
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_earthRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
-	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glUniform3f(orbitColorUniformLocation, 0.55f, 0.68f, 1.0f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
@@ -351,7 +353,7 @@ void drawOrbits()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
-	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glUniform3f(orbitColorUniformLocation, 0.84f, 0.71f, 0.53f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
@@ -360,7 +362,7 @@ void drawOrbits()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
-	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glUniform3f(orbitColorUniformLocation, 0.76f, 0.58f, 0.34f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
@@ -369,7 +371,7 @@ void drawOrbits()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
-	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glUniform3f(orbitColorUniformLocation, 0.81f, 0.71f, 0.55f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
@@ -378,7 +380,7 @@ void drawOrbits()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0), g_jupiterTranslate ) );
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), g_jupiterRotation, glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
-	glUniform3f(orbitColorUniformLocation, 0.8f, 0.8f, 0.8f);
+	glUniform3f(orbitColorUniformLocation, 0.76f, 0.58f, 0.34f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
 
 	modelTransformationStack.clear();
@@ -499,6 +501,9 @@ void drawSolarsystem()
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
     modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
     glUniform3f(lightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
+    glUseProgram(orbitShaderProgram);
+    glUniform3f(orbitLightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
+	glUseProgram(shaderProgram);
     modelTransformationStack.clear();
 
 	//sun
@@ -960,6 +965,8 @@ void setupShader()
 	orbitViewMatrixUniformLocation       = glGetUniformLocation(orbitShaderProgram, "ViewMatrix");
 	orbitProjectionMatrixUniformLocation = glGetUniformLocation(orbitShaderProgram, "ProjectionMatrix");
 	orbitColorUniformLocation            = glGetUniformLocation(orbitShaderProgram, "OrbitColor");
+	orbitLightPositionUniformLocation 	 = glGetUniformLocation(orbitShaderProgram, "LightPosition");
+
 
 	glUseProgram(shaderProgram);
 	glUniform1i(shadingModeUniformLocation, 1);
