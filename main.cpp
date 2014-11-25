@@ -88,6 +88,10 @@ unsigned orbitViewMatrixUniformLocation = 0;
 unsigned orbitColorUniformLocation     = 0;
 unsigned orbitLightPositionUniformLocation = 0;
 
+unsigned skyModelMatrixUniformLocation  = 0;
+unsigned skyViewMatrixUniformLocation = 0;
+unsigned skyProjectionMatrixUniformLocation = 0;
+unsigned skyColorUniformLocation     = 0;
 
 //handles for all sort of geometry objects
 unsigned vertexArrayObject = 0;
@@ -105,6 +109,8 @@ unsigned orbitElementArrayBuffer = 0;
 //handles for shader program and shaders
 unsigned shaderProgram = 0;
 unsigned orbitShaderProgram = 0;
+unsigned skyShaderProgram = 0;
+
 
 unsigned vertexShader = 0;
 unsigned fragmentShader = 0;
@@ -173,6 +179,7 @@ void idleFunction(void);
 void compute_viewMatrix();
 
 //forward declaration of functions
+void draw_sky_sphere();
 void drawSolarsystem();
 void draw_jupiter_moons();
 void drawOrbits();
@@ -219,6 +226,8 @@ void draw(void)
 {
 	navigate();
 	compute_viewMatrix();
+
+	draw_sky_sphere();
 	drawSolarsystem();
 	if(g_draw_orbits)
 	{
@@ -295,6 +304,37 @@ void compute_viewMatrix()
 
 	glUseProgram(orbitShaderProgram);
 	glUniformMatrix4fv(orbitViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
+
+	glUseProgram(skyShaderProgram);
+	glUniformMatrix4fv(skyViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
+}
+
+void draw_sky_sphere()
+{
+	glUseProgram(skyShaderProgram);
+
+	auto modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(camera_position[0], camera_position[1], camera_position[2]) )
+					 * glm::scale 	 (glm::mat4(1.0f), glm::vec3(1.0         ) ) ;
+	// auto modelmatrix = glm::translate(glm::mat4(1.0f), glm::vec3(3.0, 0.0, 0.0) )
+
+	// transfer model matrix to shader by the associated uniform location
+	glUniformMatrix4fv(skyModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelmatrix) );
+
+	glUniform3f(skyColorUniformLocation, 0.8f, 0.8f, 0.8f);
+
+	//calculate the normal transfomrations from modelview matrix
+    glm::mat4 normalMatrix = glm::mat4(1.0f);
+	normalMatrix = g_viewMatrix*modelmatrix;
+	normalMatrix = glm::inverse(normalMatrix);
+	normalMatrix = glm::transpose(normalMatrix);
+
+	//bind the planet geometry (the VAO!)
+	glBindVertexArray(vertexArrayObject);
+
+	// draw object according to (the EAO!). Note, that the geometry type is triangles.
+	glDrawElements(GL_TRIANGLES, mesh->getTriangles().size()*3, GL_UNSIGNED_INT, 0);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void drawOrbits()
@@ -951,6 +991,25 @@ void setupShader()
 		glDetachShader(orbitShaderProgram, fragmentShader);
 
 
+	// LOAD AND LINK SHADER
+	skyShaderProgram = glCreateProgram();
+	{
+		//load a shader (of the given type) and compile it in the convenience class 'Shader'
+		vertexShader = Shader::loadShader("../../../data/shaders/skyVertexShader.vs", GL_VERTEX_SHADER);
+		fragmentShader = Shader::loadShader("../../../data/shaders/skyFragmentShader.fs", GL_FRAGMENT_SHADER);
+
+		//attach the different shader components to the shader program ...
+		glAttachShader(skyShaderProgram, vertexShader);
+		glAttachShader(skyShaderProgram, fragmentShader);
+	}
+	//... and compile it
+	glLinkProgram(skyShaderProgram);
+
+	    //program is linked, so we can detach compiled shaders again
+		glDetachShader(skyShaderProgram, vertexShader);
+		glDetachShader(skyShaderProgram, fragmentShader);
+
+
 	//obtain shader variable locations
 	modelMatrixUniformLocation      = glGetUniformLocation(shaderProgram, "ModelMatrix");
 	viewMatrixUniformLocation       = glGetUniformLocation(shaderProgram, "ViewMatrix");
@@ -967,7 +1026,11 @@ void setupShader()
 	orbitColorUniformLocation            = glGetUniformLocation(orbitShaderProgram, "OrbitColor");
 	orbitLightPositionUniformLocation 	 = glGetUniformLocation(orbitShaderProgram, "LightPosition");
 
-
+	skyModelMatrixUniformLocation      = glGetUniformLocation(skyShaderProgram, "ModelMatrix");
+	skyViewMatrixUniformLocation       = glGetUniformLocation(skyShaderProgram, "ViewMatrix");
+	skyProjectionMatrixUniformLocation = glGetUniformLocation(skyShaderProgram, "ProjectionMatrix");
+	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "SkySphereColor");
+	
 	glUseProgram(shaderProgram);
 	glUniform1i(shadingModeUniformLocation, 1);
 }
@@ -1095,13 +1158,19 @@ void cleanup()
 {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
+	
 	glDeleteProgram(shaderProgram);
 	glDeleteProgram(orbitShaderProgram);
+	glDeleteProgram(skyShaderProgram);
 
 	glDeleteBuffers(1, &vertexBufferObject);
 	glDeleteBuffers(1, &elementArrayBuffer);
 
+	glDeleteBuffers(1, &orbitVertexArrayObject);
+	glDeleteBuffers(1, &orbitElementArrayBuffer);
+
 	glDeleteVertexArrays(1, &vertexArrayObject);
+	glDeleteVertexArrays(1, &orbitVertexBufferObject);
 }
 
 
@@ -1126,7 +1195,7 @@ void resizeFunction(int Width, int Height)
 	                           //create a projection matrix
 	glm::mat4 projectionMatrix = glm::perspective(60.0f, //FOV 60.0°
 		                                         (float)windowWidth/windowHeight, //aspect ratio of the projection
-												 1.0f, //near clipping plane
+												 0.2f, //near clipping plane
 												 100.0f); //far clipping plane
 
 	glUseProgram(shaderProgram); //bind shader program
@@ -1137,6 +1206,11 @@ void resizeFunction(int Width, int Height)
 	glUseProgram(orbitShaderProgram); //bind shader program
 	//upload projection matrix to the shader.
 	glUniformMatrix4fv(orbitProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
+	glUseProgram(0); //unbind shader program
+
+	glUseProgram(skyShaderProgram); //bind shader program
+	//upload projection matrix to the shader.
+	glUniformMatrix4fv(skyProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
 	glUseProgram(0); //unbind shader program
 }
 
