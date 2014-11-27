@@ -83,6 +83,11 @@ unsigned planetColorUniformLocation = 0;
 unsigned shadingModeUniformLocation = 0;
 unsigned lightPositionUniformLocation = 0;
 
+unsigned sunProjectionMatrixUniformLocation = 0;
+unsigned sunModelMatrixUniformLocation  = 0;
+unsigned sunViewMatrixUniformLocation = 0;
+unsigned sunColorUniformLocation = 0;
+
 unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
 unsigned orbitViewMatrixUniformLocation = 0;
@@ -125,6 +130,7 @@ unsigned orbitElementArrayBuffer = 0;
 
 //handles for shader program and shaders
 unsigned shaderProgram = 0;
+unsigned sunShaderProgram = 0;
 unsigned orbitShaderProgram = 0;
 unsigned skyShaderProgram = 0;
 
@@ -196,7 +202,8 @@ void idleFunction(void);
 void compute_viewMatrix();
 
 //forward declaration of functions
-void draw_sky_sphere();
+void drawSun();
+void drawSkySphere();
 void drawSolarsystem();
 void draw_jupiter_moons();
 void drawOrbits();
@@ -248,7 +255,9 @@ void draw(void)
 	navigate();
 	compute_viewMatrix();
 
-	draw_sky_sphere();
+	drawSkySphere();
+
+	drawSun();
 	drawSolarsystem();
 	if(g_draw_orbits)
 	{
@@ -323,14 +332,47 @@ void compute_viewMatrix()
 	glUseProgram(shaderProgram);
 	glUniformMatrix4fv(viewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
 
+	glUseProgram(sunShaderProgram);
+	glUniformMatrix4fv(sunViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
+
 	glUseProgram(orbitShaderProgram);
 	glUniformMatrix4fv(orbitViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
 
 	glUseProgram(skyShaderProgram);
 	glUniformMatrix4fv(skyViewMatrixUniformLocation, 1, GL_FALSE,  glm::value_ptr(g_viewMatrix) );
+
+	glUseProgram(0);
 }
 
-void draw_sky_sphere()
+
+void drawSun()
+{
+	glUseProgram(sunShaderProgram);
+	
+	//scale the sun
+	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) );
+	//draw the geometry
+	glUniform1i(sunColorUniformLocation, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sunTexture);
+
+	// transfer model matrix to shader by the associated uniform location
+	glUniformMatrix4fv(sunModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(model_matrix) );
+
+	//bind the planet geometry (the VAO!)
+	glBindVertexArray(vertexArrayObject);
+
+	// draw object according to (the EAO!). Note, that the geometry type is triangles.
+	glDrawElements(GL_TRIANGLES, mesh->getTriangles().size()*3, GL_UNSIGNED_INT, 0);
+
+	//clear the transformation stack
+	modelTransformationStack.clear();
+
+}
+
+
+void drawSkySphere()
 {
 	glUseProgram(skyShaderProgram);
 
@@ -570,18 +612,6 @@ void drawSolarsystem()
     glUniform3f(lightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
     modelTransformationStack.clear();
 
-	//sun
-	//scale the sun
-	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) ) );
-	//draw the geometry
-	glUniform1i(planetColorUniformLocation, 0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sunTexture);
-
-    drawPlanet(modelTransformationStack.topMatrix());
-	//clear the transformation stack
-	modelTransformationStack.clear();
 
 	//mercury
 	//scale the mercury
@@ -739,7 +769,6 @@ void draw_jupiter_moons()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -756,7 +785,6 @@ void draw_jupiter_moons()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 10.5f, 10.5f, 0.4f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -773,7 +801,6 @@ void draw_jupiter_moons()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -790,7 +817,6 @@ void draw_jupiter_moons()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
-	glUniform3f(planetColorUniformLocation, 0.8f, 0.8f, 0.8f);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -993,7 +1019,6 @@ void renderFunction(void)
 
 void setupShader()
 {
-
 	// LOAD AND LINK PLANET SHADER
 	shaderProgram = glCreateProgram();
 	{
@@ -1011,6 +1036,25 @@ void setupShader()
 	    //program is linked, so we can detach compiled shaders again
 		glDetachShader(shaderProgram, vertexShader);
 		glDetachShader(shaderProgram, fragmentShader);
+
+
+	// LOAD AND LINK PLANET SHADER
+	sunShaderProgram = glCreateProgram();
+	{
+		//load a shader (of the given type) and compile it in the convenience class 'Shader'
+		vertexShader = Shader::loadShader("../../../data/shaders/sunVertexShader.vs", GL_VERTEX_SHADER);
+		fragmentShader = Shader::loadShader("../../../data/shaders/sunFragmentShader.fs", GL_FRAGMENT_SHADER);
+
+		//attach the different shader components to the shader program ...
+		glAttachShader(sunShaderProgram, vertexShader);
+		glAttachShader(sunShaderProgram, fragmentShader);
+	}
+	//... and compile it
+	glLinkProgram(sunShaderProgram);
+
+	    //program is linked, so we can detach compiled shaders again
+		glDetachShader(sunShaderProgram, vertexShader);
+		glDetachShader(sunShaderProgram, fragmentShader);
 
 
 	// LOAD AND LINK ORBIT SHADER
@@ -1056,11 +1100,15 @@ void setupShader()
 	viewMatrixUniformLocation       = glGetUniformLocation(shaderProgram, "ViewMatrix");
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
-	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "PlanetColorTexture");
+	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture");
 	shadingModeUniformLocation      = glGetUniformLocation(shaderProgram, "ShadingMode");
 	lightPositionUniformLocation 	= glGetUniformLocation(shaderProgram, "LightPosition");
 
-	//obtain orbit-shader variable locations
+	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
+	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
+	sunProjectionMatrixUniformLocation = glGetUniformLocation(sunShaderProgram, "ProjectionMatrix");
+	sunColorUniformLocation            = glGetUniformLocation(sunShaderProgram, "ColorTexture");
+
 	orbitModelMatrixUniformLocation      = glGetUniformLocation(orbitShaderProgram, "ModelMatrix");
 	orbitViewMatrixUniformLocation       = glGetUniformLocation(orbitShaderProgram, "ViewMatrix");
 	orbitProjectionMatrixUniformLocation = glGetUniformLocation(orbitShaderProgram, "ProjectionMatrix");
@@ -1070,7 +1118,7 @@ void setupShader()
 	skyModelMatrixUniformLocation      = glGetUniformLocation(skyShaderProgram, "ModelMatrix");
 	skyViewMatrixUniformLocation       = glGetUniformLocation(skyShaderProgram, "ViewMatrix");
 	skyProjectionMatrixUniformLocation = glGetUniformLocation(skyShaderProgram, "ProjectionMatrix");
-	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "SkySphereColorTexture");
+	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "ColorTexture");
 
 	
 	glUseProgram(shaderProgram);
@@ -1209,7 +1257,7 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(venusTexture, "../../../data/textures/venusmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(mercuryTexture, "../../../data/textures/mercurymap.jpg", GL_RGB8, GL_TEXTURE0);
 
-	TextureLoader::loadImageToGLTexture(sunTexture, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE0);
+	TextureLoader::loadImageToGLTexture(sunTexture, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
 
 	TextureLoader::loadImageToGLTexture(moonTexture, "../../../data/textures/moonmap.jpg", GL_RGB8, GL_TEXTURE0);
 }
@@ -1224,6 +1272,7 @@ void cleanup()
 	glDeleteShader(fragmentShader);
 	
 	glDeleteProgram(shaderProgram);
+	glDeleteProgram(sunShaderProgram);
 	glDeleteProgram(orbitShaderProgram);
 	glDeleteProgram(skyShaderProgram);
 
@@ -1265,16 +1314,19 @@ void resizeFunction(int Width, int Height)
 	glUseProgram(shaderProgram); //bind shader program
 	//upload projection matrix to the shader.
 	glUniformMatrix4fv(projectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
-	glUseProgram(0); //unbind shader program
+
+	glUseProgram(sunShaderProgram); //bind shader program
+	//upload projection matrix to the shader.
+	glUniformMatrix4fv(sunProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
 
 	glUseProgram(orbitShaderProgram); //bind shader program
 	//upload projection matrix to the shader.
 	glUniformMatrix4fv(orbitProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
-	glUseProgram(0); //unbind shader program
 
 	glUseProgram(skyShaderProgram); //bind shader program
 	//upload projection matrix to the shader.
 	glUniformMatrix4fv(skyProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
+	
 	glUseProgram(0); //unbind shader program
 }
 
