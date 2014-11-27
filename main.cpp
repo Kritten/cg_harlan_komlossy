@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <chrono>
 
 #include <climits>
 #include <GL/glew.h>
@@ -86,7 +87,8 @@ unsigned lightPositionUniformLocation = 0;
 unsigned sunProjectionMatrixUniformLocation = 0;
 unsigned sunModelMatrixUniformLocation  = 0;
 unsigned sunViewMatrixUniformLocation = 0;
-unsigned sunColorUniformLocation = 0;
+unsigned sunColorUniformLocation0 = 0;
+unsigned sunColorUniformLocation1 = 0;
 
 unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
@@ -111,7 +113,8 @@ unsigned earthTexture = 0;
 unsigned venusTexture = 0;
 unsigned mercuryTexture = 0;
 
-unsigned sunTexture = 0;
+unsigned sunTexture0 = 0;
+unsigned sunTexture1 = 0;
 
 unsigned moonTexture = 0;
 
@@ -352,10 +355,14 @@ void drawSun()
 	//scale the sun
 	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) );
 	//draw the geometry
-	glUniform1i(sunColorUniformLocation, 0);
+	glUniform1i(sunColorUniformLocation0, 0);
+	glUniform1i(sunColorUniformLocation1, 1);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sunTexture);
+	glBindTexture(GL_TEXTURE_2D, sunTexture0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sunTexture1);
 
 	// transfer model matrix to shader by the associated uniform location
 	glUniformMatrix4fv(sunModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(model_matrix) );
@@ -1107,7 +1114,8 @@ void setupShader()
 	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
 	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
 	sunProjectionMatrixUniformLocation = glGetUniformLocation(sunShaderProgram, "ProjectionMatrix");
-	sunColorUniformLocation            = glGetUniformLocation(sunShaderProgram, "ColorTexture");
+	sunColorUniformLocation0            = glGetUniformLocation(sunShaderProgram, "ColorTexture0");
+	sunColorUniformLocation1            = glGetUniformLocation(sunShaderProgram, "ColorTexture1");
 
 	orbitModelMatrixUniformLocation      = glGetUniformLocation(orbitShaderProgram, "ModelMatrix");
 	orbitViewMatrixUniformLocation       = glGetUniformLocation(orbitShaderProgram, "ViewMatrix");
@@ -1257,7 +1265,8 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(venusTexture, "../../../data/textures/venusmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(mercuryTexture, "../../../data/textures/mercurymap.jpg", GL_RGB8, GL_TEXTURE0);
 
-	TextureLoader::loadImageToGLTexture(sunTexture, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
+	TextureLoader::loadImageToGLTexture(sunTexture0, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
+	TextureLoader::loadImageToGLTexture(sunTexture1, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE1);
 
 	TextureLoader::loadImageToGLTexture(moonTexture, "../../../data/textures/moonmap.jpg", GL_RGB8, GL_TEXTURE0);
 }
