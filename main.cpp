@@ -994,12 +994,12 @@ void renderFunction(void)
 void setupShader()
 {
 
-	// LOAD AND LINK SHADER
+	// LOAD AND LINK PLANET SHADER
 	shaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
-		vertexShader = Shader::loadShader("../../../data/shaders/simpleVertexShader.vs", GL_VERTEX_SHADER);
-		fragmentShader = Shader::loadShader("../../../data/shaders/simpleFragmentShader.fs", GL_FRAGMENT_SHADER);
+		vertexShader = Shader::loadShader("../../../data/shaders/planetVertexShader.vs", GL_VERTEX_SHADER);
+		fragmentShader = Shader::loadShader("../../../data/shaders/planetFragmentShader.fs", GL_FRAGMENT_SHADER);
 
 		//attach the different shader components to the shader program ...
 		glAttachShader(shaderProgram, vertexShader);
@@ -1013,7 +1013,7 @@ void setupShader()
 		glDetachShader(shaderProgram, fragmentShader);
 
 
-	// LOAD AND LINK SHADER
+	// LOAD AND LINK ORBIT SHADER
 	orbitShaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
@@ -1032,7 +1032,7 @@ void setupShader()
 		glDetachShader(orbitShaderProgram, fragmentShader);
 
 
-	// LOAD AND LINK SHADER
+	// LOAD AND LINK SKYSPHERE SHADER
 	skyShaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
