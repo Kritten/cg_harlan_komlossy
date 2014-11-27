@@ -1,11 +1,15 @@
 #version 330
 
-uniform vec3 SkySphereColor;
+in vec2 passed_tex_coord;
+
+uniform sampler2D SkySphereColorTexture;
 
 out vec4 out_Color;
 
 
 void main(void)
 {
-    out_Color = vec4(SkySphereColor, 1.0);
+	vec3 textureColor = texture2D(SkySphereColorTexture, passed_tex_coord).xyz;
+	textureColor = 0.3 * textureColor;
+    out_Color = vec4(textureColor, 1.0);
 }

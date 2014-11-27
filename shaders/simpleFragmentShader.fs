@@ -1,25 +1,25 @@
 #version 330
 
-float distance_func(vec3 vector_1, vec3 vector_2);
 
-uniform vec3 PlanetColor;
+in vec4 passed_normal;
+in vec3 passed_vs_position;
+in vec2 passed_tex_coord;
+
+uniform sampler2D PlanetColorTexture;
 uniform mat4 ViewMatrix;
 uniform int ShadingMode; // 1: Normal Phong Shading   2: Cell Shading
 uniform vec3 LightPosition;
 
-in  vec4 passed_normal;
-in  vec3 passed_vs_position;
-
 out vec4 out_Color;
 
+
+// Globals
 float ka = 0.06f;
 float sun_kd = 0.5f;
 float sun_ks = 1.0f;
 float light_kd = 0.5f;
 float light_ks = 1.0f;
 int n = 15;
-
-
 
 float distance_func(vec3 vector_1, vec3 vector_2, float faktor)
 {
@@ -77,9 +77,11 @@ void main(void)
 
     total = ambient + total_sun + total_lightsource;
     
+    vec3 texture_Color = texture2D(PlanetColorTexture, passed_tex_coord).xyz;
+
     if (ShadingMode == 1)
     {
-        out_Color = vec4(PlanetColor * total, 1.0);
+        out_Color = vec4(texture_Color * total, 1.0);
         return;
     }
 
@@ -87,7 +89,7 @@ void main(void)
     {
         {
             total = cell_shading_remap(total);
-            out_Color = vec4(PlanetColor * total, 1.0);
+            out_Color = vec4(texture_Color * total, 1.0);
             return;
         }
     }
