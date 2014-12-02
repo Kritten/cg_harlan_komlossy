@@ -5,7 +5,9 @@ in vec4 passed_normal;
 in vec3 passed_vs_position;
 in vec2 passed_tex_coord;
 
-uniform sampler2D ColorTexture;
+uniform sampler2D ColorTexture0;
+uniform sampler2D ColorTexture1;
+uniform sampler2D ColorTexture2;
 uniform mat4 ViewMatrix;
 uniform int ShadingMode; // 1: Normal Phong Shading   2: Cell Shading
 uniform vec3 LightPosition;
@@ -57,31 +59,91 @@ void main(void)
         }
     }
 
+    vec3 texture_Color0 = texture2D(ColorTexture0, passed_tex_coord).xyz; //colormap
+    vec3 texture_Color1 = texture2D(ColorTexture1, passed_tex_coord).xyz; //normalmap
+    vec3 texture_Color2 = texture2D(ColorTexture2, passed_tex_coord).xyz; //glossmap
+
+
+
     float ambient  = ka;
 
     vec4 sun_location = ViewMatrix*vec4(0.0, 0.0, 0.0, 1.0);
     vec3 vertex_to_sun = normalize(sun_location.xyz-passed_vs_position);
-    float dot_product_diffus = dot(passed_normal.xyz, vertex_to_sun);
-    float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
-    float diffus   = sun_kd * max(0.0, dot_product_diffus);
-    float specular = sun_ks * max(0.0, dot_product_specular);
-    float total_sun = distance_func(sun_location.xyz, passed_vs_position, 5.0f) * (diffus + pow(specular, n));
 
     vec4 light_location = ViewMatrix*vec4(LightPosition, 1.0);
     vec3 vertex_to_light = normalize(light_location.xyz-passed_vs_position);
-    dot_product_diffus = dot(passed_normal.xyz, vertex_to_light);
-    dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
-    diffus   = light_kd * max(0.0, dot_product_diffus);
-    specular = light_ks * max(0.0, dot_product_specular);
-    float total_lightsource = distance_func(light_location.xyz, passed_vs_position, 2.0f) * (diffus + pow(specular, n));
 
-    total = ambient + total_sun + total_lightsource;
+    int mode = 0;
+
+    if(mode == 0)   //standard
+    {
+        float dot_product_diffus = dot(passed_normal.xyz, vertex_to_sun);
+        float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
+        float diffus = sun_kd * max(0.0, dot_product_diffus);
+        float specular = sun_ks * max(0.0, dot_product_specular);
+        float total_sun = distance_func(sun_location.xyz, passed_vs_position, 5.0f) * (diffus + pow(specular, n));
+
+        dot_product_diffus = dot(passed_normal.xyz, vertex_to_light);
+        dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
+        diffus   = light_kd * max(0.0, dot_product_diffus);
+        specular = light_ks * max(0.0, dot_product_specular);
+        float total_lightsource = distance_func(light_location.xyz, passed_vs_position, 2.0f) * (diffus + pow(specular, n));
+        
+        total = ambient + total_sun + total_lightsource;
+    }
+    else if(mode == 1) //normal map
+    {
+        float dot_product_diffus = dot(texture_Color1, vertex_to_sun);
+        float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
+        float diffus = sun_kd * max(0.0, dot_product_diffus);
+        float specular = sun_ks * max(0.0, dot_product_specular);
+        float total_sun = distance_func(sun_location.xyz, passed_vs_position, 5.0f) * (diffus + pow(specular, n));
+
+        dot_product_diffus = dot(texture_Color1, vertex_to_light);
+        dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
+        diffus   = light_kd * max(0.0, dot_product_diffus);
+        specular = light_ks * max(0.0, dot_product_specular);
+        float total_lightsource = distance_func(light_location.xyz, passed_vs_position, 2.0f) * (diffus + pow(specular, n));
+        
+        total = ambient + total_sun + total_lightsource;
+    }
+    else if(mode == 2)
+    {
+        float dot_product_diffus = dot(passed_normal.xyz, vertex_to_sun);
+        float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
+        float diffus = sun_kd * max(0.0, dot_product_diffus);
+        float specular = sun_ks * length(texture_Color2) * max(0.0, dot_product_specular);
+        float total_sun = distance_func(sun_location.xyz, passed_vs_position, 5.0f) * (diffus + pow(specular, n));
+
+        dot_product_diffus = dot(passed_normal.xyz, vertex_to_light);
+        dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
+        diffus   = light_kd * max(0.0, dot_product_diffus);
+        specular = light_ks * length(texture_Color2) * max(0.0, dot_product_specular);
+        float total_lightsource = distance_func(light_location.xyz, passed_vs_position, 2.0f) * (diffus + pow(specular, n));
+        
+        total = ambient + total_sun + total_lightsource;
+    }
+        // float dot_product_diffus = dot(texture_Color1, vertex_to_sun);
+        // float dot_product_specular = dot(normalize(reflect(vertex_to_sun, texture_Color1)), normalize(passed_vs_position)); 
+        // float specular = sun_ks * length(texture_Color2) * max(0.0, dot_product_specular);
+        // // float dot_product_diffus = dot(passed_normal.xyz, vertex_to_sun);
+        // // float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
+
+        // vec4 light_location = ViewMatrix*vec4(LightPosition, 1.0);
+        // vec3 vertex_to_light = normalize(light_location.xyz-passed_vs_position);
+        // dot_product_diffus = dot(texture_Color1, vertex_to_light);
+        // dot_product_specular = dot(normalize(reflect(vertex_to_light, texture_Color1)), normalize(passed_vs_position)); 
+        // // dot_product_diffus = dot(passed_normal.xyz, vertex_to_light);
+        // // dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
+        // diffus   = light_kd * max(0.0, dot_product_diffus);
+        // specular = light_ks * length(texture_Color2) * max(0.0, dot_product_specular);
+
+
     
-    vec3 texture_Color = texture2D(ColorTexture, passed_tex_coord).xyz;
 
     if (ShadingMode == 1)
     {
-        out_Color = vec4(texture_Color * total, 1.0);
+        out_Color = vec4(texture_Color0 * total, 1.0);
         return;
     }
 
@@ -89,7 +151,7 @@ void main(void)
     {
         {
             total = cell_shading_remap(total);
-            out_Color = vec4(texture_Color * total, 1.0);
+            out_Color = vec4(texture_Color0 * total, 1.0);
             return;
         }
     }

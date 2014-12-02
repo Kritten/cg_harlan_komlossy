@@ -58,7 +58,7 @@ float last_mouse_y = 0;
 glm::mat4 g_viewMatrix = glm::mat4(1.0);
 float camera_x = 0;
 float camera_y = 0;
-glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f); 
+glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f);
 float g_movement_speed = 0.2f;
 float g_mouse_speed = 0.4f;
 float g_key_shift_multiplicator = 3.0f;
@@ -101,6 +101,9 @@ unsigned skyViewMatrixUniformLocation = 0;
 unsigned skyProjectionMatrixUniformLocation = 0;
 unsigned skyColorUniformLocation     = 0;
 
+unsigned normalColorUniformLocation     = 0;
+unsigned glossColorUniformLocation     = 0;
+
 //handels for all kind of textures
 unsigned skyTexture = 0;
 
@@ -117,6 +120,9 @@ unsigned sunTexture0 = 0;
 unsigned sunTexture1 = 0;
 
 unsigned moonTexture = 0;
+
+unsigned normalTexture = 0;
+unsigned glossTexture = 0;
 
 //handles for all sort of geometry objects
 unsigned vertexArrayObject = 0;
@@ -173,7 +179,7 @@ glm::vec3 g_europaTranslate = glm::vec3(2.1f, 0.0f, 0.0f);
 glm::vec3 g_ganymedeTranslate = glm::vec3(2.5f, 0.0f, 0.0f);
 glm::vec3 g_callistoTranslate = glm::vec3(2.8f, 0.0f, 0.0f);
 
-// Rotations 
+// Rotations
 float g_neptunRotation  = 0.0f;
 float g_uranusRotation  = 0.0f;
 float g_saturnRotation  = 0.0f;
@@ -284,7 +290,7 @@ void navigate()
 		camera_position[1] += g_viewing_direction[1] * movement_speed;
 		camera_position[2] += g_viewing_direction[2] * movement_speed;
 	}
-	
+
 	if(g_key_s)
 	{
 	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
@@ -314,7 +320,7 @@ void navigate()
 	{
 		camera_position[1] -= g_descending_speed;
 	}
-	
+
 }
 
 void compute_viewMatrix()
@@ -351,7 +357,7 @@ void compute_viewMatrix()
 void drawSun()
 {
 	glUseProgram(sunShaderProgram);
-	
+
 	//scale the sun
 	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) );
 	//draw the geometry
@@ -438,7 +444,7 @@ void drawOrbits()
 	glUniformMatrix4fv(orbitModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(modelTransformationStack.topMatrix()) );
 	glUniform3f(orbitColorUniformLocation, 0.35f, 0.48f, 0.820f);
 	glDrawArrays(GL_LINE_LOOP, 0, orbitVertices.size()/3);
-    
+
 	modelTransformationStack.clear();
     modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0), glm::vec3(g_earthMoonTranslate.x)) );
     modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0), -90.0f, glm::vec3(1.0f, 0.0f, 0.0f) ) );
@@ -619,6 +625,9 @@ void drawSolarsystem()
     glUniform3f(lightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
     modelTransformationStack.clear();
 
+	glUniform1i(planetColorUniformLocation, 0);
+	glUniform1i(normalColorUniformLocation, 1);
+	glUniform1i(glossColorUniformLocation, 2);
 
 	//mercury
 	//scale the mercury
@@ -630,6 +639,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mercuryTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -644,6 +657,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, venusTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -658,6 +675,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, earthTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, earthTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, glossTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -676,6 +697,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, moonTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -690,6 +715,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, marsTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -704,6 +733,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, jupiterTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -718,8 +751,14 @@ void drawSolarsystem()
 	//rotate it slowly around the y-axis
 	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_saturnRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//draw the geometry
+
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, saturnTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -734,6 +773,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, uranusTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -748,6 +791,10 @@ void drawSolarsystem()
 	//draw the geometry
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, neptuneTexture);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -1107,9 +1154,11 @@ void setupShader()
 	viewMatrixUniformLocation       = glGetUniformLocation(shaderProgram, "ViewMatrix");
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
-	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture");
+	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture0");
 	shadingModeUniformLocation      = glGetUniformLocation(shaderProgram, "ShadingMode");
 	lightPositionUniformLocation 	= glGetUniformLocation(shaderProgram, "LightPosition");
+	normalColorUniformLocation      = glGetUniformLocation(shaderProgram, "ColorTexture1");
+	glossColorUniformLocation      = glGetUniformLocation(shaderProgram, "ColorTexture2");
 
 	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
 	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
@@ -1128,7 +1177,8 @@ void setupShader()
 	skyProjectionMatrixUniformLocation = glGetUniformLocation(skyShaderProgram, "ProjectionMatrix");
 	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "ColorTexture");
 
-	
+
+
 	glUseProgram(shaderProgram);
 	glUniform1i(shadingModeUniformLocation, 1);
 }
@@ -1269,6 +1319,10 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(sunTexture1, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE1);
 
 	TextureLoader::loadImageToGLTexture(moonTexture, "../../../data/textures/moonmap.jpg", GL_RGB8, GL_TEXTURE0);
+
+	TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
+	TextureLoader::loadImageToGLTexture(glossTexture, "../../../data/textures/planet_glossmap.jpg", GL_RGB8, GL_TEXTURE2);
+	// TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/normalmap.jpg", GL_RGB8, GL_TEXTURE1);
 }
 
 
@@ -1279,7 +1333,7 @@ void cleanup()
 {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
-	
+
 	glDeleteProgram(shaderProgram);
 	glDeleteProgram(sunShaderProgram);
 	glDeleteProgram(orbitShaderProgram);
@@ -1335,7 +1389,7 @@ void resizeFunction(int Width, int Height)
 	glUseProgram(skyShaderProgram); //bind shader program
 	//upload projection matrix to the shader.
 	glUniformMatrix4fv(skyProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
-	
+
 	glUseProgram(0); //unbind shader program
 }
 
