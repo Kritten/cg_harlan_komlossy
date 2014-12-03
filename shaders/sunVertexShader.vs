@@ -11,11 +11,20 @@ uniform mat4 ModelMatrix;
 uniform mat4 ViewMatrix;
 uniform mat4 ProjectionMatrix;
 uniform mat4 NormalMatrix;
+uniform float Time;
+
+uniform sampler2D ColorTexture0;
 
 
 void main(void)
 {
-	vec4 vertexPos = vec4(in_Position, 1.0);
+	vec2 tex = vec2(in_TexCoord.x + Time*0.1, in_TexCoord.y+ Time*0.2);
+	vec3 texture_Specular = texture2D(ColorTexture0, tex).xyz; //specularmapa
+	float texture_Specular_exponent = (texture_Specular.x + texture_Specular.y + texture_Specular.z) / 10.0f ;
+
+	vec3 tmp_position = in_Position + texture_Specular_exponent * in_Position;
+
+	vec4 vertexPos = vec4(tmp_position, 1.0);
 	
 	vec4 vs_position = (ViewMatrix * ModelMatrix) * vertexPos;
 	passed_vs_position = vec3(vs_position.xyz);

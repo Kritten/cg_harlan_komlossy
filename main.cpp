@@ -90,6 +90,7 @@ unsigned sunModelMatrixUniformLocation  = 0;
 unsigned sunViewMatrixUniformLocation = 0;
 unsigned sunColorUniformLocation0 = 0;
 unsigned sunColorUniformLocation1 = 0;
+unsigned sunTimeUniformLocation = 0;
 
 unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
@@ -104,8 +105,11 @@ unsigned skyColorUniformLocation     = 0;
 
 unsigned normalColorUniformLocation     = 0;
 unsigned glossColorUniformLocation     = 0;
+unsigned specularColorUniformLocation     = 0;
 
 //handels for all kind of textures
+unsigned whiteTexture = 0;
+
 unsigned skyTexture = 0;
 
 unsigned neptuneTexture = 0;
@@ -123,7 +127,9 @@ unsigned sunTexture1 = 0;
 unsigned moonTexture = 0;
 
 unsigned normalTexture = 0;
-unsigned glossTexture = 0;
+unsigned glossTextureEarth = 0;
+unsigned glossTextureBrick = 0;
+unsigned specularTextureBrick = 0;
 
 //handles for all sort of geometry objects
 unsigned vertexArrayObject = 0;
@@ -364,6 +370,7 @@ void drawSun()
 	//draw the geometry
 	glUniform1i(sunColorUniformLocation0, 0);
 	glUniform1i(sunColorUniformLocation1, 1);
+	glUniform1f(sunTimeUniformLocation, g_elapsed_virtual_time);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, sunTexture0);
@@ -629,6 +636,7 @@ void drawSolarsystem()
 	glUniform1i(planetColorUniformLocation, 0);
 	glUniform1i(normalColorUniformLocation, 1);
 	glUniform1i(glossColorUniformLocation, 2);
+	glUniform1i(specularColorUniformLocation, 3);
 
 	//mercury
 	//scale the mercury
@@ -643,7 +651,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -661,7 +671,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -679,7 +691,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, earthTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -701,7 +715,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -719,7 +735,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -737,7 +755,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -759,7 +779,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -777,7 +799,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -795,7 +819,9 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);;
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -1161,17 +1187,19 @@ void setupShader()
 	viewMatrixUniformLocation       = glGetUniformLocation(shaderProgram, "ViewMatrix");
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
-	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture0");
 	shadingModeUniformLocation      = glGetUniformLocation(shaderProgram, "ShadingMode");
 	lightPositionUniformLocation 	= glGetUniformLocation(shaderProgram, "LightPosition");
-	normalColorUniformLocation      = glGetUniformLocation(shaderProgram, "ColorTexture1");
-	glossColorUniformLocation      = glGetUniformLocation(shaderProgram, "ColorTexture2");
+	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture");
+	normalColorUniformLocation      = glGetUniformLocation(shaderProgram, "NormalMapTexture");
+	glossColorUniformLocation       = glGetUniformLocation(shaderProgram, "GlossMapTexture");
+	specularColorUniformLocation    = glGetUniformLocation(shaderProgram, "SpecularMapTexture");
 
 	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
 	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
 	sunProjectionMatrixUniformLocation = glGetUniformLocation(sunShaderProgram, "ProjectionMatrix");
-	sunColorUniformLocation0            = glGetUniformLocation(sunShaderProgram, "ColorTexture0");
-	sunColorUniformLocation1            = glGetUniformLocation(sunShaderProgram, "ColorTexture1");
+	sunColorUniformLocation0           = glGetUniformLocation(sunShaderProgram, "ColorTexture0");
+	sunColorUniformLocation1           = glGetUniformLocation(sunShaderProgram, "ColorTexture1");
+	sunTimeUniformLocation             = glGetUniformLocation(sunShaderProgram, "Time");
 
 	orbitModelMatrixUniformLocation      = glGetUniformLocation(orbitShaderProgram, "ModelMatrix");
 	orbitViewMatrixUniformLocation       = glGetUniformLocation(orbitShaderProgram, "ViewMatrix");
@@ -1197,7 +1225,7 @@ void setupShader()
 void loadModel()
 {
 	//load a wavefront *.obj file
-	gloost::ObjLoader loader("../../../data/objects/sphere.obj");
+	gloost::ObjLoader loader("../../../data/objects/sphere1.obj");
 	mesh = loader.getMesh();
 
 	//IMPORTANT: use this to increase the reference counter
@@ -1310,9 +1338,17 @@ void generateOrbit()
 
 void loadTextures()
 {
-	// TextureLoader::loadImageToGLTexture(skyTexture, "../../../data/textures/spaaace.jpg", GL_RGB8, GL_TEXTURE0);
+	// Sky Sphere Texture
 	TextureLoader::loadImageToGLTexture(skyTexture, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
+	// TextureLoader::loadImageToGLTexture(skyTexture, "../../../data/textures/spaaace.jpg", GL_RGB8, GL_TEXTURE0);
 
+
+	// Sun Textures
+	TextureLoader::loadImageToGLTexture(sunTexture0, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
+	TextureLoader::loadImageToGLTexture(sunTexture1, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE1);
+
+
+	// Color Textures
 	TextureLoader::loadImageToGLTexture(neptuneTexture, "../../../data/textures/neptunemap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(uranusTexture, "../../../data/textures/uranusmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(saturnTexture, "../../../data/textures/saturnmap.jpg", GL_RGB8, GL_TEXTURE0);
@@ -1321,15 +1357,23 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(earthTexture, "../../../data/textures/earthmaprealistic.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(venusTexture, "../../../data/textures/venusmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(mercuryTexture, "../../../data/textures/mercurymap.jpg", GL_RGB8, GL_TEXTURE0);
-
-	TextureLoader::loadImageToGLTexture(sunTexture0, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
-	TextureLoader::loadImageToGLTexture(sunTexture1, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE1);
-
 	TextureLoader::loadImageToGLTexture(moonTexture, "../../../data/textures/moonmap.jpg", GL_RGB8, GL_TEXTURE0);
 
+
+	// Normal Textures
 	TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
-	TextureLoader::loadImageToGLTexture(glossTexture, "../../../data/textures/planet_glossmap.jpg", GL_RGB8, GL_TEXTURE2);
 	// TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/normalmap.jpg", GL_RGB8, GL_TEXTURE1);
+
+
+	// Gloss Textures
+	TextureLoader::loadImageToGLTexture(whiteTexture, "../../../data/textures/white.jpg", GL_RGB8, GL_TEXTURE2);
+	TextureLoader::loadImageToGLTexture(glossTextureEarth, "../../../data/textures/planet_glossmap.jpg", GL_RGB8, GL_TEXTURE2);
+	TextureLoader::loadImageToGLTexture(glossTextureBrick, "../../../data/textures/Brick_wall_close-up_view.jpg", GL_RGB8, GL_TEXTURE2);
+
+
+	// Specular Textures
+	TextureLoader::loadImageToGLTexture(specularTextureBrick, "../../../data/textures/Brick_wall_close-up_view.jpg", GL_RGB8, GL_TEXTURE3);
+	// TextureLoader::loadImageToGLTexture(specularTextureBrick, "../../../data/textures/white.jpg", GL_RGB8, GL_TEXTURE3);
 }
 
 
