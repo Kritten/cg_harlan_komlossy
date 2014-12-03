@@ -51,6 +51,7 @@ unsigned frameCount = 0;
 float g_elapsed_virtual_time = 0.0;
 int g_last_elapsed_time = 0;
 float g_speed = 0.0001;
+float g_toggle = 1.0;
 
 //navigation
 float last_mouse_x = 0;
@@ -594,7 +595,7 @@ void drawSolarsystem()
 	int now = glutGet(GLUT_ELAPSED_TIME);
 	int time_difference = now - g_last_elapsed_time;
 	g_last_elapsed_time = now;
-	g_elapsed_virtual_time += (float)time_difference * g_speed;
+	g_elapsed_virtual_time += (float)time_difference * g_speed * g_toggle;
 
 
 	// Rotation
@@ -1035,6 +1036,12 @@ void keyPress(unsigned char keyEvent, int x, int y)
 	}
 	if(keyEvent == ' ')
 	{
+		if (g_toggle == 0.0){
+			g_toggle = 1.0;
+		}else{
+			g_toggle = 0.0;
+		}
+
 		g_key_space = true;
 	}
 }
