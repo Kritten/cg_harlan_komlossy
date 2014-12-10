@@ -4,6 +4,8 @@
 in vec4 passed_normal;
 in vec3 passed_vs_position;
 in vec2 passed_tex_coord;
+in vec3 passed_tangent;
+in vec3 passed_bitangent;
 
 uniform sampler2D ColorTexture;
 uniform sampler2D NormalMapTexture;
@@ -13,6 +15,7 @@ uniform sampler2D SpecularMapTexture;
 uniform mat4 ViewMatrix;
 uniform int ShadingMode; // 1: Normal Phong Shading   2: Cell Shading
 uniform vec3 LightPosition;
+uniform mat4 NormalMatrix;
 
 out vec4 out_Color;
 
@@ -61,9 +64,15 @@ void main(void)
         }
     }
 
+    
+    vec3 tangent = normalize(vec3((NormalMatrix * vec4(passed_tangent, 0)).xyz)); 
+    vec3 bitangent = normalize(vec3((NormalMatrix * vec4(passed_bitangent, 0)).xyz)); 
+    mat3 tangentSpace = mat3(tangent, bitangent, passed_normal);
+    vec3 texture_Normal = normalize(tangentSpace * normalize(texture2D(NormalMapTexture, passed_tex_coord).rgb * vec3(2, 2, 1) - vec3(1, 1, 0)));
+
 
     vec3 texture_Color = texture2D(ColorTexture, passed_tex_coord).xyz; //colormap
-    vec3 texture_Normal = texture2D(NormalMapTexture, passed_tex_coord).xyz; //normalmap
+    // vec3 texture_Normal = texture2D(NormalMapTexture, passed_tex_coord).xyz; //normalmap
     float texture_Gloss = texture2D(GlossMapTexture, passed_tex_coord).x; //glossmap
     vec3 texture_Specular = texture2D(SpecularMapTexture, passed_tex_coord).xyz; //specularmap
     float texture_Specular_exponent = (texture_Specular.x + texture_Specular.y + texture_Specular.z) / 3.0f ;
@@ -76,11 +85,12 @@ void main(void)
     vec3 vertex_to_sun = normalize(sun_location.xyz-passed_vs_position);
 
     // Diffus
-    float dot_product_diffus = dot(passed_normal.xyz, vertex_to_sun);
+    float dot_product_diffus = dot(texture_Normal, vertex_to_sun);
     float diffus = sun_kd * max(0.0, dot_product_diffus);
 
     // Specular
-    float dot_product_specular = dot(normalize(reflect(vertex_to_sun, passed_normal.xyz)), normalize(passed_vs_position)); 
+    float dot_product_specular = dot(normalize(reflect(vertex_to_sun, texture_Normal)), normalize(passed_vs_position)); 
+    // float specular = sun_ks * max(0.0, pow(dot_product_specular, n));
     float specular = sun_ks * texture_Gloss * max(0.0, pow(dot_product_specular, texture_Specular_exponent*n));
 
     float total_sun = distance_func(sun_location.xyz, passed_vs_position, 8.0f) * (diffus + specular);
@@ -91,11 +101,12 @@ void main(void)
     vec3 vertex_to_light = normalize(light_location.xyz-passed_vs_position);
 
     // diffus 
-    dot_product_diffus = dot(passed_normal.xyz, vertex_to_light);
+    dot_product_diffus = dot(texture_Normal, vertex_to_light);
     diffus   = light_kd * max(0.0, pow(specular, n));
 
     // specular
-    dot_product_specular = dot(normalize(reflect(vertex_to_light, passed_normal.xyz)), normalize(passed_vs_position)); 
+    dot_product_specular = dot(normalize(reflect(vertex_to_light, texture_Normal)), normalize(passed_vs_position)); 
+    // specular = light_ks * max(0.0, pow(dot_product_specular, n));
     specular = light_ks * texture_Gloss * max(0.0, pow(dot_product_specular, texture_Specular_exponent*n));
 
     float total_lightsource = distance_func(light_location.xyz, passed_vs_position, 2.0f) * (diffus + specular);

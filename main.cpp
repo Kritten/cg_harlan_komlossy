@@ -7,6 +7,7 @@
 #define M_PI    3.14159265358979323846f
 
 #include <iostream>
+#include <algorithm>
 #include <vector>
 #include <cmath>
 #include <chrono>
@@ -25,6 +26,9 @@
 //mesh object for loading planet geometry
 gloost::Mesh* mesh = 0;
 
+std::vector<glm::vec3> tangents;
+std::vector<glm::vec3> bitangents;
+std::vector<float> meshInfo;
 // loader for the wavefront *.obj file format
 #include <ObjLoader.h>
 
@@ -61,6 +65,7 @@ float camera_x = 0;
 float camera_y = 0;
 glm::vec3 g_viewing_direction = glm::vec3(0.0f, 0.0f, -1.0f);
 float g_movement_speed = 0.2f;
+float g_slow_movement_speed = 0.008f;
 float g_mouse_speed = 0.4f;
 float g_key_shift_multiplicator = 3.0f;
 float g_ascending_speed = 0.3;
@@ -75,6 +80,12 @@ bool g_key_e = false;
 bool g_key_shift = false;
 bool g_key_ctrl = false;
 bool g_key_space = false;
+bool g_key_z = false;
+bool g_key_h = false;
+bool g_key_g = false;
+bool g_key_j = false;
+bool g_key_t = false;
+bool g_key_u = false;
 
 //handles for shader variables
 unsigned projectionMatrixUniformLocation = 0;
@@ -106,6 +117,7 @@ unsigned skyColorUniformLocation     = 0;
 unsigned normalColorUniformLocation     = 0;
 unsigned glossColorUniformLocation     = 0;
 unsigned specularColorUniformLocation     = 0;
+unsigned displacementColorUniformLocation     = 0;
 
 //handels for all kind of textures
 unsigned whiteTexture = 0;
@@ -126,10 +138,14 @@ unsigned sunTexture1 = 0;
 
 unsigned moonTexture = 0;
 
-unsigned normalTexture = 0;
-unsigned glossTextureEarth = 0;
-unsigned glossTextureBrick = 0;
-unsigned specularTextureBrick = 0;
+unsigned earthNormalTexture = 0;
+unsigned planetNormalTexture = 0;
+unsigned planetSpecularTexture = 0;
+unsigned planetDisplacementTexture = 0;
+unsigned planetGlossTexture = 0;
+unsigned earthDisplacementTexture = 0;
+unsigned earthGlossTexture = 0;
+unsigned earthSpecularTexture = 0;
 
 //handles for all sort of geometry objects
 unsigned vertexArrayObject = 0;
@@ -237,6 +253,7 @@ void timerFunction(int);
 void cleanup(void);
 
 void loadModel(void);
+std::vector<glm::vec3> calculateTangents();
 void generateOrbit();
 void loadTextures();
 
@@ -290,6 +307,33 @@ void navigate()
 	{
 		movement_speed = g_key_shift_multiplicator * movement_speed;
 	}
+	if(g_key_z)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += g_viewing_direction[0] * g_slow_movement_speed;
+		camera_position[1] += g_viewing_direction[1] * g_slow_movement_speed;
+		camera_position[2] += g_viewing_direction[2] * g_slow_movement_speed;
+	}
+
+	if(g_key_h)
+	{
+	    g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] -= g_viewing_direction[0] * g_slow_movement_speed;
+		camera_position[1] -= g_viewing_direction[1] * g_slow_movement_speed;
+		camera_position[2] -= g_viewing_direction[2] * g_slow_movement_speed;
+	}
+	if(g_key_g)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += g_viewing_direction[2] * g_slow_movement_speed;
+		camera_position[2] += -g_viewing_direction[0] * g_slow_movement_speed;
+	}
+	if(g_key_j)
+	{
+		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
+		camera_position[0] += -g_viewing_direction[2] * g_slow_movement_speed;
+		camera_position[2] += g_viewing_direction[0] * g_slow_movement_speed;
+	}
 	if(g_key_w)
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
@@ -309,15 +353,21 @@ void navigate()
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
 		camera_position[0] += g_viewing_direction[2] * movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * movement_speed;
 		camera_position[2] += -g_viewing_direction[0] * movement_speed;
 	}
 	if(g_key_d)
 	{
 		g_viewing_direction = compute_viewing_direction(glm::inverse(g_viewMatrix));
 		camera_position[0] += -g_viewing_direction[2] * movement_speed;
-		// camera_position[1] += g_viewing_direction[1] * movement_speed;
 		camera_position[2] += g_viewing_direction[0] * movement_speed;
+	}
+	if(g_key_t)
+	{
+		camera_position[1] += g_ascending_speed/20.0;
+	}
+	if(g_key_u)
+	{
+		camera_position[1] -= g_descending_speed/20.0;
 	}
 	if(g_key_q)
 	{
@@ -637,10 +687,13 @@ void drawSolarsystem()
 	glUniform1i(normalColorUniformLocation, 1);
 	glUniform1i(glossColorUniformLocation, 2);
 	glUniform1i(specularColorUniformLocation, 3);
+	glUniform1i(displacementColorUniformLocation, 4);
 
 	//mercury
 	//scale the mercury
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_mercuryScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_mercuryRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the mercury
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_mercuryTranslate) );
 	//rotate it slowly around the y-axis
@@ -649,11 +702,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, mercuryTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -661,6 +716,8 @@ void drawSolarsystem()
 	//venus
 	//scale the venus
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_venusScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_venusRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the venus
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_venusTranslate) );
 	//rotate it slowly around the y-axis
@@ -669,11 +726,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, venusTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -681,6 +740,8 @@ void drawSolarsystem()
 	//earth
 	//scale the earth
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_earthScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_earthRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the earth
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_earthTranslate ) );
 	//rotate it slowly around the y-axis
@@ -689,11 +750,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, earthTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, earthTexture);
+	glBindTexture(GL_TEXTURE_2D, earthNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, earthDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -701,6 +764,8 @@ void drawSolarsystem()
     //earthmoon
 	//scale the earthmoon
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_earthMoonScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_earthMoonRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the earthmoon
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_earthMoonTranslate ) );
 	//rotate it slowly around the y-axis
@@ -713,11 +778,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, moonTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -725,6 +792,8 @@ void drawSolarsystem()
 	//mars
 	//scale the mars
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_marsScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_marsRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the mars
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_marsTranslate ) );
 	//rotate it slowly around the y-axis
@@ -733,11 +802,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, marsTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -745,6 +816,8 @@ void drawSolarsystem()
 	//jupiter
 	//scale the jupiter
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_jupiterScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the jupiter
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
 	//rotate it slowly around the y-axis
@@ -753,11 +826,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, jupiterTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -767,6 +842,8 @@ void drawSolarsystem()
 	//saturn
 	//scale the saturn
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_saturnScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_saturnRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the saturn
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_saturnTranslate ) );
 	//rotate it slowly around the y-axis
@@ -777,11 +854,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, saturnTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -789,6 +868,8 @@ void drawSolarsystem()
 	//uranus
 	//scale the uranus
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_uranusScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_uranusRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the uranus
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_uranusTranslate ) );
 	//rotate it slowly around the y-axis
@@ -797,11 +878,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, uranusTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -809,6 +892,8 @@ void drawSolarsystem()
 	//neptun
 	//scale the neptun
 	modelTransformationStack.pushMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(g_neptunScale) ) );
+	//rotate around own axis
+	modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), -(float)(3*g_neptunRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
 	//translate the neptun
 	modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_neptunTranslate ) );
 	//rotate it slowly around the y-axis
@@ -817,11 +902,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, neptuneTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, glossTextureBrick);
+	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, specularTextureBrick);;
+	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -939,13 +1026,11 @@ void mouseMovement(int x, int y)
 /////////////////////////////////////////////////////////////////////////////////////////
 void specialKeyRelease(int keyEvent, int x, int y)
 {
-	//handle key release events of special keys here (like arrow keys)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 void specialKeyPress(int keyEvent, int x, int y)
 {
-	//handle key press events of special keys here (like arrow keys)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -999,6 +1084,30 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 	{
 		g_key_e = false;
 	}
+	if(keyEvent == 'z' || keyEvent == 'Z')
+	{
+		g_key_z = false;
+	}
+	if(keyEvent == 'h' || keyEvent == 'H')
+	{
+		g_key_h = false;
+	}
+	if(keyEvent == 'g' || keyEvent == 'G')
+	{
+		g_key_g = false;
+	}
+	if(keyEvent == 'j' || keyEvent == 'J')
+	{
+		g_key_j = false;
+	}
+	if(keyEvent == 't' || keyEvent == 'T')
+	{
+		g_key_t = false;
+	}
+	if(keyEvent == 'u' || keyEvent == 'U')
+	{
+		g_key_u = false;
+	}
 	if(keyEvent == 'x' || keyEvent == 'X')
 	{
 		g_speed *= 0.8;
@@ -1051,6 +1160,30 @@ void keyPress(unsigned char keyEvent, int x, int y)
 	if(keyEvent == 'e' || keyEvent == 'E')
 	{
 		g_key_e = true;
+	}
+	if(keyEvent == 'z' || keyEvent == 'Z')
+	{
+		g_key_z = true;
+	}
+	if(keyEvent == 'h' || keyEvent == 'H')
+	{
+		g_key_h = true;
+	}
+	if(keyEvent == 'g' || keyEvent == 'G')
+	{
+		g_key_g = true;
+	}
+	if(keyEvent == 'j' || keyEvent == 'J')
+	{
+		g_key_j = true;
+	}
+	if(keyEvent == 't' || keyEvent == 'T')
+	{
+		g_key_t = true;
+	}
+	if(keyEvent == 'u' || keyEvent == 'U')
+	{
+		g_key_u = true;
 	}
 	if(glutGetModifiers() == GLUT_ACTIVE_SHIFT)
 	{
@@ -1193,6 +1326,7 @@ void setupShader()
 	normalColorUniformLocation      = glGetUniformLocation(shaderProgram, "NormalMapTexture");
 	glossColorUniformLocation       = glGetUniformLocation(shaderProgram, "GlossMapTexture");
 	specularColorUniformLocation    = glGetUniformLocation(shaderProgram, "SpecularMapTexture");
+	displacementColorUniformLocation    = glGetUniformLocation(shaderProgram, "DisplacementMapTexture");
 
 	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
 	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
@@ -1253,10 +1387,32 @@ void loadModel()
 	//and bind it as a array buffer target
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
 
+  	tangents = calculateTangents();
+	for(unsigned i = 0; i < mesh->getNumInterleavedPackages(); ++i)
+	{
+		meshInfo.push_back(mesh->getVertices()[i][0]);
+		meshInfo.push_back(mesh->getVertices()[i][1]);
+		meshInfo.push_back(mesh->getVertices()[i][2]);
+
+		glm::vec3 const& normal = glm::vec3(mesh->getNormals()[i][0],mesh->getNormals()[i][1], mesh->getNormals()[i][2]);
+		// meshInfo.push_back(normal[0]);
+		// meshInfo.push_back(normal[1]);
+		// meshInfo.push_back(normal[2]);
+		meshInfo.push_back(mesh->getTexCoords()[i][0]);
+		meshInfo.push_back(mesh->getTexCoords()[i][1]);
+		meshInfo.push_back(tangents[i][0]);
+		meshInfo.push_back(tangents[i][1]);
+		meshInfo.push_back(tangents[i][2]);
+		glm::vec3 bitangent = glm::cross(normal, tangents[i]);
+		meshInfo.push_back(bitangent[0]);
+		meshInfo.push_back(bitangent[1]);
+		meshInfo.push_back(bitangent[2]);
+	}
+
 	//load data that resides in CPU RAM into video RAM.
 	glBufferData(GL_ARRAY_BUFFER, //??
-		sizeof(float) * mesh->getInterleavedAttributes().size(), //??
-		&mesh->getInterleavedAttributes().front(), //??
+		sizeof(float) * meshInfo.size(), //??
+		&meshInfo.front(), //??
 		GL_STATIC_DRAW); //??
 
 	//enable vertex attribute at location 0 (compare with vertex shader input)
@@ -1267,9 +1423,18 @@ void loadModel()
 		GLOOST_MESH_NUM_COMPONENTS_VERTEX,
 		GL_FLOAT, //datatype
 		GL_FALSE, //should the data be normalized?
-		mesh->getInterleavedInfo().interleavedPackageStride, //size of attribute stride for one primitive
-		(GLvoid*)(mesh->getInterleavedInfo().interleavedVertexStride)); //offset in stride
+		sizeof(float) * 11, //size of attribute stride for one primitive
+		(GLvoid*)(0)); //offset in stride
 
+	// //enable vertex attribute at location 1 (compare with vertex shader input)
+	// glEnableVertexAttribArray(1);
+
+	// //specifies where in the GL_ARRAY_BUFFER our data(the vertex normal) is exactly (compare with vertex shader input)
+	// glVertexAttribPointer(1,
+	// 	GLOOST_MESH_NUM_COMPONENTS_NORMAL,
+	// 	GL_FLOAT, GL_FALSE,
+	// 	sizeof(float) * 14,
+	// 	(GLvoid*)(sizeof(float) * 3));
 
 	//enable vertex attribute at location 1 (compare with vertex shader input)
 	glEnableVertexAttribArray(1);
@@ -1278,8 +1443,29 @@ void loadModel()
 	glVertexAttribPointer(1,
 		GLOOST_MESH_NUM_COMPONENTS_TEXCOORD,
 		GL_FLOAT, GL_FALSE,
-		mesh->getInterleavedInfo().interleavedPackageStride,
-		(GLvoid*)(mesh->getInterleavedInfo().interleavedTexcoordStride));
+    sizeof(float) * 11,
+    (GLvoid*)(sizeof(float) * 3));
+
+
+	// enable attribute at loaction 2 (tangent)
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(2,
+		GLOOST_MESH_NUM_COMPONENTS_NORMAL,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(float) * 11,
+		(GLvoid*)(sizeof(float) * 5));
+
+	//enable attribute at loaction 3 (bitangent)
+	glEnableVertexAttribArray(3);
+
+	glVertexAttribPointer(3,
+		GLOOST_MESH_NUM_COMPONENTS_NORMAL,
+		GL_FLOAT,
+		GL_FALSE,
+		sizeof(float) * 11,
+		(GLvoid*)(sizeof(float) * 8));
 
 
 	//the buffer that becomes the element array object is created
@@ -1295,6 +1481,71 @@ void loadModel()
 	// unbind the VAO - scope ends
 	glBindVertexArray(0);
 
+}
+
+std::vector<glm::vec3> calculateTangents()
+{
+  std::vector<glm::vec3> tangents;
+
+  std::vector<glm::vec3> t1 = std::vector<glm::vec3>(mesh->getNumInterleavedPackages(), glm::vec3(0,0,0));
+  std::vector<glm::vec3> t2 = std::vector<glm::vec3>(mesh->getNumInterleavedPackages(), glm::vec3(0,0,0));
+
+  for(gloost::TriangleFace const& tri : mesh->getTriangles())
+  {
+    unsigned i1 = tri.vertexIndices[0];
+    unsigned i2 = tri.vertexIndices[1];
+    unsigned i3 = tri.vertexIndices[2];
+
+    glm::vec3 vert1 = glm::vec3(mesh->getVertices()[i1][0], mesh->getVertices()[i1][1], mesh->getVertices()[i1][2]); 
+    glm::vec3 vert2 = glm::vec3(mesh->getVertices()[i2][0], mesh->getVertices()[i2][1], mesh->getVertices()[i2][2]); 
+    glm::vec3 vert3 = glm::vec3(mesh->getVertices()[i3][0], mesh->getVertices()[i3][1], mesh->getVertices()[i3][2]); 
+
+    glm::vec3 hor = vert2 - vert1;
+    glm::vec3 vert = vert3 - vert1;
+
+    glm::vec2 tex1 = glm::vec2(mesh->getTexCoords()[i1][0], mesh->getTexCoords()[i1][1]);
+    glm::vec2 tex2 = glm::vec2(mesh->getTexCoords()[i2][0], mesh->getTexCoords()[i2][1]);
+    glm::vec2 tex3 = glm::vec2(mesh->getTexCoords()[i3][0], mesh->getTexCoords()[i3][1]);
+
+    //horizontal vector
+    glm::vec2 s = tex2 - tex1;
+    //vertical vector
+    glm::vec2 t = tex3 - tex1;
+
+    float divisor = 1.0f / (s[0] * t[1] - s[1] * t[0]);
+
+    glm::vec3 sDir = glm::vec3(t[1] * hor[0] - t[0] * vert[0], t[1] * hor[1] - t[0] * vert[1], t[1] * hor[2] - t[0] * vert[2]);
+    sDir *= divisor;
+    glm::vec3 tDir = glm::vec3(s[0] * vert[0] - s[1] * hor[0], s[0] * vert[1] - s[1] * hor[1], s[0] * vert[2] - s[1] * hor[2]);
+    tDir *= divisor;
+
+    // Vector3D sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+    // Vector3D tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,(s1 * z2 - s2 * z1) * r);
+
+    t1[i1] = t1[i1] + sDir;
+    t1[i2] = t1[i2] + sDir;
+    t1[i3] = t1[i3] + sDir;
+    t2[i1] = t2[i1] + tDir;
+    t2[i2] = t2[i2] + tDir;
+    t2[i3] = t2[i3] + tDir;
+  }
+
+  for(unsigned i = 0; i < mesh->getNumInterleavedPackages(); ++i)
+  {
+    glm::vec3 const& normal = glm::vec3(mesh->getNormals()[i][0],mesh->getNormals()[i][1], mesh->getNormals()[i][2]);
+    //orthogonalize
+    glm::vec3 tangent = (t1[i] - normal) * glm::normalize(glm::dot(normal, t1[i]));
+
+    // correct handedness
+    if(glm::dot(glm::cross(normal, t1[i]), t2[i]) < 0.0F)
+    {
+      tangent = -tangent;
+    }
+
+    tangents.push_back(tangent);
+  }
+
+  return tangents;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1347,6 +1598,12 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(sunTexture0, "../../../data/textures/suncore.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(sunTexture1, "../../../data/textures/sunmap.jpg", GL_RGB8, GL_TEXTURE1);
 
+	// Earth Textures
+	TextureLoader::loadImageToGLTexture(earthTexture, "../../../data/textures/earth_texture.jpg", GL_RGB8, GL_TEXTURE0);
+	TextureLoader::loadImageToGLTexture(earthNormalTexture, "../../../data/textures/earth_normal.jpg", GL_RGB8, GL_TEXTURE1);
+	TextureLoader::loadImageToGLTexture(earthGlossTexture, "../../../data/textures/earth_gloss.jpg", GL_RGB8, GL_TEXTURE2);
+	TextureLoader::loadImageToGLTexture(earthSpecularTexture, "../../../data/textures/earth_gloss.jpg", GL_RGB8, GL_TEXTURE3);
+	TextureLoader::loadImageToGLTexture(earthDisplacementTexture, "../../../data/textures/earth_displacement.jpg", GL_RGB8, GL_TEXTURE4);
 
 	// Color Textures
 	TextureLoader::loadImageToGLTexture(neptuneTexture, "../../../data/textures/neptunemap.jpg", GL_RGB8, GL_TEXTURE0);
@@ -1354,26 +1611,21 @@ void loadTextures()
 	TextureLoader::loadImageToGLTexture(saturnTexture, "../../../data/textures/saturnmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(jupiterTexture, "../../../data/textures/jupitermap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(marsTexture, "../../../data/textures/mars_1k_color.jpg", GL_RGB8, GL_TEXTURE0);
-	TextureLoader::loadImageToGLTexture(earthTexture, "../../../data/textures/earthmaprealistic.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(venusTexture, "../../../data/textures/venusmap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(mercuryTexture, "../../../data/textures/mercurymap.jpg", GL_RGB8, GL_TEXTURE0);
 	TextureLoader::loadImageToGLTexture(moonTexture, "../../../data/textures/moonmap.jpg", GL_RGB8, GL_TEXTURE0);
 
-
 	// Normal Textures
-	TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
-	// TextureLoader::loadImageToGLTexture(normalTexture, "../../../data/textures/normalmap.jpg", GL_RGB8, GL_TEXTURE1);
+	TextureLoader::loadImageToGLTexture(planetNormalTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
 
+	// Displacement Textures
+	TextureLoader::loadImageToGLTexture(planetDisplacementTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
 
 	// Gloss Textures
-	TextureLoader::loadImageToGLTexture(whiteTexture, "../../../data/textures/white.jpg", GL_RGB8, GL_TEXTURE2);
-	TextureLoader::loadImageToGLTexture(glossTextureEarth, "../../../data/textures/planet_glossmap.jpg", GL_RGB8, GL_TEXTURE2);
-	TextureLoader::loadImageToGLTexture(glossTextureBrick, "../../../data/textures/Brick_wall_close-up_view.jpg", GL_RGB8, GL_TEXTURE2);
-
+	TextureLoader::loadImageToGLTexture(planetGlossTexture, "../../../data/textures/planet_gloss.jpg", GL_RGB8, GL_TEXTURE2);
 
 	// Specular Textures
-	TextureLoader::loadImageToGLTexture(specularTextureBrick, "../../../data/textures/Brick_wall_close-up_view.jpg", GL_RGB8, GL_TEXTURE3);
-	// TextureLoader::loadImageToGLTexture(specularTextureBrick, "../../../data/textures/white.jpg", GL_RGB8, GL_TEXTURE3);
+	TextureLoader::loadImageToGLTexture(planetSpecularTexture, "../../../data/textures/planet_gloss.jpg", GL_RGB8, GL_TEXTURE2);
 }
 
 
