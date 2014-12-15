@@ -140,6 +140,7 @@ unsigned moonTexture = 0;
 
 unsigned earthNormalTexture = 0;
 unsigned planetNormalTexture = 0;
+unsigned gasplanetNormalTexture = 0;
 unsigned planetSpecularTexture = 0;
 unsigned planetDisplacementTexture = 0;
 unsigned planetGlossTexture = 0;
@@ -826,13 +827,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, jupiterTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -854,13 +855,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, saturnTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -878,13 +879,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, uranusTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -902,13 +903,13 @@ void drawSolarsystem()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, neptuneTexture);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, planetNormalTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, planetGlossTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, planetSpecularTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, planetDisplacementTexture);
+	glBindTexture(GL_TEXTURE_2D, gasplanetNormalTexture);
     drawPlanet(modelTransformationStack.topMatrix());
 	//clear the transformation stack
 	modelTransformationStack.clear();
@@ -1617,6 +1618,7 @@ void loadTextures()
 
 	// Normal Textures
 	TextureLoader::loadImageToGLTexture(planetNormalTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
+	TextureLoader::loadImageToGLTexture(gasplanetNormalTexture, "../../../data/textures/gas_planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
 
 	// Displacement Textures
 	TextureLoader::loadImageToGLTexture(planetDisplacementTexture, "../../../data/textures/planet_normalmap.jpg", GL_RGB8, GL_TEXTURE1);
