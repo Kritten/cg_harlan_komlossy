@@ -119,6 +119,9 @@ unsigned glossColorUniformLocation     = 0;
 unsigned specularColorUniformLocation     = 0;
 unsigned displacementColorUniformLocation     = 0;
 
+unsigned screenQuadShaderColorTextureUniformLocation = 0;
+unsigned screenQuadShaderScreenDimensionsUniformLocation = 0;
+
 //handels for all kind of textures
 unsigned whiteTexture = 0;
 
@@ -159,17 +162,25 @@ unsigned orbitVertexArrayObject = 0;
 unsigned orbitVertexBufferObject = 0;
 unsigned orbitElementArrayBuffer = 0;
 
+unsigned screenQuadVAO = 0;
+unsigned screenQuadVBO = 0;
 
 
-//handles for shader program and shaders
+//handles for shader programs and shaders
 unsigned shaderProgram = 0;
 unsigned sunShaderProgram = 0;
 unsigned orbitShaderProgram = 0;
 unsigned skyShaderProgram = 0;
-
+unsigned screenQuadShaderProgram = 0;
 
 unsigned vertexShader = 0;
 unsigned fragmentShader = 0;
+
+
+// handles for the custom FBO
+unsigned renderFBO = 0;
+unsigned renderColorBuffer = 0;
+unsigned renderDepthBuffer = 0;
 
 
 // Scales
@@ -254,11 +265,13 @@ void timerFunction(int);
 void cleanup(void);
 
 void loadModel(void);
+void createQuad();
 std::vector<glm::vec3> calculateTangents();
 void generateOrbit();
 void loadTextures();
 
 void setupShader();
+void setupFrameBuffer();
 void draw(void);
 void renderFunction(void);
 glm::vec3 compute_viewing_direction(glm::mat4 matrix);
@@ -1356,6 +1369,72 @@ void setupShader()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void setupFrameBuffer()
+{
+	// Create own Framebuffer
+	glGenFramebuffers(1, &renderFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, renderFBO);
+
+	// Generate the Color Texture 
+	glGenTextures(1, &renderColorBuffer);
+	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, windowWidth, windowHeight, 
+				 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	// bind the Color Attachment to the Framebuffer
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderColorBuffer, 0);
+
+	// generate Depth Buffer
+	glGenRenderbuffers(1, &renderDepthBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, renderDepthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, windowWidth, windowHeight);
+
+	// bind the depth buffer to the Framebuffer
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderDepthBuffer);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void createQuad()
+{
+	std::vector<float> geometry = 
+	{
+		-1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f,
+
+		-1.0f, -1.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f,
+		 1.0f, -1.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &screenQuadVAO);
+	glBindVertexArray(screenQuadVAO);
+	
+	glGenBuffers(1, &screenQuadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, screenQuadVBO);
+
+	glBufferData(GL_ARRAY_BUFFER, 6*3* sizeof(float), &(geometry[0]), GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3,	GL_FLOAT, GL_FALSE,	sizeof(float) * 3, (GLvoid*)0);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 
 void loadModel()
 {
@@ -1665,6 +1744,15 @@ void idleFunction(void)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
+void resizeFBOtextures()
+{
+	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, windowWidth, windowHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+	
+	glBindTexture(GL_TEXTURE_2D, renderDepthBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, windowWidth, windowHeight);
+}
+/////////////////////////////////////////////////////////////////////////////////////////
 
 
 void resizeFunction(int Width, int Height)
@@ -1696,6 +1784,7 @@ void resizeFunction(int Width, int Height)
 	glUniformMatrix4fv(skyProjectionMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix) ); //upload projection matrix to bound shader
 
 	glUseProgram(0); //unbind shader program
+	resizeFBOtextures();
 }
 
 
@@ -1791,10 +1880,13 @@ void initialize(int argc, char* argv[])
 
 	//create shaders
 	setupShader();
-	//load model and fill buffer objects
+	setupFrameBuffer();
+	//load and creating geometry
+	createQuad();
 	loadModel();
-	loadTextures();
 	generateOrbit();
+	// load Textures
+	loadTextures();
 }
 
 
