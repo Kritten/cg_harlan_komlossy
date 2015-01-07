@@ -273,6 +273,8 @@ void loadTextures();
 void setupShader();
 void setupFrameBuffer();
 void draw(void);
+void geometry_render_pass();
+void screen_quad_pass();
 void renderFunction(void);
 glm::vec3 compute_viewing_direction(glm::mat4 matrix);
 void print_matrix(glm::mat4 matrix);
@@ -301,9 +303,19 @@ void draw(void)
 {
 	navigate();
 	compute_viewMatrix();
+	
+	geometry_render_pass();
+	screen_quad_pass();
+}
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void geometry_render_pass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, renderFBO);
 	drawSkySphere();
-
 	drawSun();
 	drawSolarsystem();
 	if(g_draw_orbits)
@@ -313,6 +325,26 @@ void draw(void)
 	draw_saturn_rings();
 	draw_uranus_rings();
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void screen_quad_pass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUseProgram(screenQuadShaderProgram);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
+
+	glUniform1i(screenQuadShaderColorTextureUniformLocation, 0);
+	glUniform2i(screenQuadShaderScreenDimensionsUniformLocation, windowWidth, windowHeight);
+
+	glBindVertexArray(screenQuadVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 
 void navigate()
 {
@@ -487,6 +519,7 @@ void drawSkySphere()
 	// draw object according to (the EAO!). Note, that the geometry type is triangles.
 	glDrawElements(GL_TRIANGLES, mesh->getTriangles().size()*3, GL_UNSIGNED_INT, 0);
 
+	// clear depth buffer to make the Sky Sphere Background
 	glClear(GL_DEPTH_BUFFER_BIT);
 }
 
@@ -1253,7 +1286,7 @@ void renderFunction(void)
 
 void setupShader()
 {
-	// LOAD AND LINK PLANET SHADER
+	// LOAD, COMPILE AND LINK PLANET SHADER
 	shaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
@@ -1264,7 +1297,6 @@ void setupShader()
 		glAttachShader(shaderProgram, vertexShader);
 		glAttachShader(shaderProgram, fragmentShader);
 	}
-	//... and compile it
 	glLinkProgram(shaderProgram);
 
 	    //program is linked, so we can detach compiled shaders again
@@ -1272,7 +1304,7 @@ void setupShader()
 		glDetachShader(shaderProgram, fragmentShader);
 
 
-	// LOAD AND LINK PLANET SHADER
+	// LOAD, COMPILE AND LINK PLANET SHADER
 	sunShaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
@@ -1283,7 +1315,6 @@ void setupShader()
 		glAttachShader(sunShaderProgram, vertexShader);
 		glAttachShader(sunShaderProgram, fragmentShader);
 	}
-	//... and compile it
 	glLinkProgram(sunShaderProgram);
 
 	    //program is linked, so we can detach compiled shaders again
@@ -1291,7 +1322,7 @@ void setupShader()
 		glDetachShader(sunShaderProgram, fragmentShader);
 
 
-	// LOAD AND LINK ORBIT SHADER
+	// LOAD, COMPILE AND LINK ORBIT SHADER
 	orbitShaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
@@ -1302,7 +1333,6 @@ void setupShader()
 		glAttachShader(orbitShaderProgram, vertexShader);
 		glAttachShader(orbitShaderProgram, fragmentShader);
 	}
-	//... and compile it
 	glLinkProgram(orbitShaderProgram);
 
 	    //program is linked, so we can detach compiled shaders again
@@ -1310,7 +1340,7 @@ void setupShader()
 		glDetachShader(orbitShaderProgram, fragmentShader);
 
 
-	// LOAD AND LINK SKYSPHERE SHADER
+	// LOAD, COMPILE AND LINK SKYSPHERE SHADER
 	skyShaderProgram = glCreateProgram();
 	{
 		//load a shader (of the given type) and compile it in the convenience class 'Shader'
@@ -1321,12 +1351,31 @@ void setupShader()
 		glAttachShader(skyShaderProgram, vertexShader);
 		glAttachShader(skyShaderProgram, fragmentShader);
 	}
-	//... and compile it
 	glLinkProgram(skyShaderProgram);
 
 	    //program is linked, so we can detach compiled shaders again
 		glDetachShader(skyShaderProgram, vertexShader);
 		glDetachShader(skyShaderProgram, fragmentShader);
+
+
+	// LOAD, COMPILE AND LINK SCREEN QUAD SHADER
+	screenQuadShaderProgram = glCreateProgram();
+	{
+		//load a shader (of the given type) and compile it in the convenience class 'Shader'
+		vertexShader = Shader::loadShader("../../../data/shaders/screenQuadVertexShader.vs", GL_VERTEX_SHADER);
+		fragmentShader = Shader::loadShader("../../../data/shaders/screenQuadFragmentShader.fs", GL_FRAGMENT_SHADER);
+
+		//attach the different shader components to the shader program ...
+		glAttachShader(screenQuadShaderProgram, vertexShader);
+		glAttachShader(screenQuadShaderProgram, fragmentShader);
+	}
+	glLinkProgram(screenQuadShaderProgram);
+
+	    //program is linked, so we can detach compiled shaders again
+		glDetachShader(screenQuadShaderProgram, vertexShader);
+		glDetachShader(screenQuadShaderProgram, fragmentShader);
+
+
 
 
 	//obtain shader variable locations
@@ -1360,6 +1409,8 @@ void setupShader()
 	skyProjectionMatrixUniformLocation = glGetUniformLocation(skyShaderProgram, "ProjectionMatrix");
 	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "ColorTexture");
 
+	screenQuadShaderColorTextureUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ColorTexture");
+	screenQuadShaderScreenDimensionsUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ScreenDimensions");
 
 
 	glUseProgram(shaderProgram);
