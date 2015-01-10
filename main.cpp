@@ -49,7 +49,12 @@ bool middleMouseButtonDown = false;
 bool leftMouseButtonDown = false;
 bool rightMouseButtonDown = false;
 
-unsigned frameCount = 0;
+unsigned frameCount = 0; 
+
+int greyscale = 0;
+int horizontal_mirrowed = 0;
+int vertical_mirrowed = 0;
+int blur = 0;
 
 //speed
 float g_elapsed_virtual_time = 0.0;
@@ -119,6 +124,10 @@ unsigned glossColorUniformLocation     = 0;
 unsigned specularColorUniformLocation     = 0;
 unsigned displacementColorUniformLocation     = 0;
 
+unsigned screenQuadShaderGreyscaleUniformLocation = 0;
+unsigned screenQuadShaderHorizontalMirrowedUniformLocation = 0;
+unsigned screenQuadShaderVerticalMirrowedUniformLocation = 0;
+unsigned screenQuadShaderBlurUniformLocation = 0;
 unsigned screenQuadShaderColorTextureUniformLocation = 0;
 unsigned screenQuadShaderScreenDimensionsUniformLocation = 0;
 
@@ -338,6 +347,11 @@ void screen_quad_pass()
 
 	glUniform1i(screenQuadShaderColorTextureUniformLocation, 0);
 	glUniform2i(screenQuadShaderScreenDimensionsUniformLocation, windowWidth, windowHeight);
+	
+	glUniform1i(screenQuadShaderGreyscaleUniformLocation, greyscale);
+	glUniform1i(screenQuadShaderHorizontalMirrowedUniformLocation, horizontal_mirrowed);
+	glUniform1i(screenQuadShaderVerticalMirrowedUniformLocation, vertical_mirrowed);
+	glUniform1i(screenQuadShaderBlurUniformLocation, blur);
 
 	glBindVertexArray(screenQuadVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1093,6 +1107,50 @@ void keyRelease(unsigned char keyEvent, int x, int y)
 		glUseProgram(shaderProgram);
 		glUniform1i(shadingModeUniformLocation, 2);
 	}
+	if(keyEvent == '7')
+	{
+		if(greyscale == 0)
+		{
+			greyscale = 1;
+		}
+		else
+		{
+			greyscale = 0;
+		}
+	}
+	if(keyEvent == '8')
+	{
+		if(horizontal_mirrowed == 0)
+		{
+			horizontal_mirrowed = 1;
+		}
+		else
+		{
+			horizontal_mirrowed = 0;
+		}
+	}
+	if(keyEvent == '9')
+	{
+		if(vertical_mirrowed == 0)
+		{
+			vertical_mirrowed = 1;
+		}
+		else
+		{
+			vertical_mirrowed = 0;
+		}
+	}
+	if(keyEvent == '0')
+	{
+		if(blur == 0)
+		{
+			blur = 1;
+		}
+		else
+		{
+			blur = 0;
+		}
+	}
 	if(keyEvent == 'r')
 	{
 		setupShader();
@@ -1411,7 +1469,10 @@ void setupShader()
 
 	screenQuadShaderColorTextureUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ColorTexture");
 	screenQuadShaderScreenDimensionsUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ScreenDimensions");
-
+	screenQuadShaderGreyscaleUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "greyscale");
+	screenQuadShaderHorizontalMirrowedUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "horizontal_mirrowed");
+	screenQuadShaderVerticalMirrowedUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "vertical_mirrowed");
+	screenQuadShaderBlurUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "blur");
 
 	glUseProgram(shaderProgram);
 	glUniform1i(shadingModeUniformLocation, 1);
