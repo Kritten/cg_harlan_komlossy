@@ -15,6 +15,7 @@ float gaussian_weights[9] = float[9] //example for 3x3 weights in gauss kernel
 							1.0/ 8.0, 1.0/ 4.0, 1.0/ 8.0,
 							1.0/16.0, 1.0/ 8.0, 1.0/16.0);
 
+
 void main(void)
 {
 
@@ -22,12 +23,12 @@ void main(void)
 
 	if(horizontal_mirrowed == 1)
 	{
-		tex_coords = vec2(-tex_coords.x, tex_coords.y);
+		tex_coords = vec2(1.0-tex_coords.x, tex_coords.y);
 		
 	}
 	if(vertical_mirrowed == 1)
 	{
-		tex_coords = vec2(tex_coords.x, -tex_coords.y);
+		tex_coords = vec2(tex_coords.x, 1.0-tex_coords.y);
 		
 	}
 
