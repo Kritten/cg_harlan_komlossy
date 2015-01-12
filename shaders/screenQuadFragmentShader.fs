@@ -18,7 +18,6 @@ float gaussian_weights[9] = float[9] //example for 3x3 weights in gauss kernel
 
 void main(void)
 {
-
 	vec2 tex_coords = (gl_FragCoord.xy) / ScreenDimensions;
 
 	if(horizontal_mirrowed == 1)
@@ -42,9 +41,9 @@ void main(void)
 		{
 			for(int x = -1; x <= 1; x++)
 			{
-				tex_coords *= ScreenDimensions;
-				tex_coords = vec2(tex_coords.x + x, tex_coords.y + y) / ScreenDimensions;
-				vec3 tex_color = texture2D(ColorTexture, tex_coords).rgb;
+				vec2 new_tex_coords = tex_coords * ScreenDimensions;
+				new_tex_coords = vec2(new_tex_coords.x + x, new_tex_coords.y + y) / ScreenDimensions;
+				vec3 tex_color = texture2D(ColorTexture, new_tex_coords).rgb;
 
 				int z = 0;	
 				if(y == -1) 
