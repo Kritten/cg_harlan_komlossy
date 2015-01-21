@@ -21,22 +21,24 @@
 
 #include <TransformationStack.h>
 #include <Shader.h>
-//include gloost::Mesh wich is a geometry container
 #include <Mesh.h>
+
+//include gloost::Mesh wich is a geometry container
 //mesh object for loading planet geometry
+// loader for the wavefront *.obj file format
+
+#include <ObjLoader.h>
+//#include<FreeImage.h>
+#include "TextureLoader.h"
+#include "GBuffer.h"
+
+#define PI 3.1415926535897932384626433832795028841971
+
 gloost::Mesh* mesh = 0;
 
 std::vector<glm::vec3> tangents;
 std::vector<glm::vec3> bitangents;
 std::vector<float> meshInfo;
-// loader for the wavefront *.obj file format
-#include <ObjLoader.h>
-
-//#include<FreeImage.h>
-#include "TextureLoader.h"
-
-#define PI 3.1415926535897932384626433832795028841971
-
 //
 int windowWidth = 800;
 int windowHeight = 600;
@@ -96,7 +98,7 @@ bool g_key_u = false;
 unsigned projectionMatrixUniformLocation = 0;
 unsigned modelMatrixUniformLocation  = 0;
 unsigned viewMatrixUniformLocation = 0;
-unsigned normalMatrixUniformLocation     = 0;
+unsigned normalMatrixUniformLocation  = 0;
 unsigned planetColorUniformLocation = 0;
 unsigned shadingModeUniformLocation = 0;
 unsigned lightPositionUniformLocation = 0;
@@ -104,6 +106,7 @@ unsigned lightPositionUniformLocation = 0;
 unsigned sunProjectionMatrixUniformLocation = 0;
 unsigned sunModelMatrixUniformLocation  = 0;
 unsigned sunViewMatrixUniformLocation = 0;
+unsigned sunNormalMatrixUniformLocation  = 0;
 unsigned sunColorUniformLocation0 = 0;
 unsigned sunColorUniformLocation1 = 0;
 unsigned sunTimeUniformLocation = 0;
@@ -129,6 +132,8 @@ unsigned screenQuadShaderHorizontalMirrowedUniformLocation = 0;
 unsigned screenQuadShaderVerticalMirrowedUniformLocation = 0;
 unsigned screenQuadShaderBlurUniformLocation = 0;
 unsigned screenQuadShaderColorTextureUniformLocation = 0;
+unsigned screenQuadShaderNormalTextureUniformLocation = 0;
+unsigned screenQuadShaderPositionTextureUniformLocation = 0;
 unsigned screenQuadShaderScreenDimensionsUniformLocation = 0;
 
 //handels for all kind of textures
@@ -174,6 +179,8 @@ unsigned orbitElementArrayBuffer = 0;
 unsigned screenQuadVAO = 0;
 unsigned screenQuadVBO = 0;
 
+// GBUFFER
+GBuffer g_gbuffer;
 
 //handles for shader programs and shaders
 unsigned shaderProgram = 0;
@@ -184,12 +191,6 @@ unsigned screenQuadShaderProgram = 0;
 
 unsigned vertexShader = 0;
 unsigned fragmentShader = 0;
-
-
-// handles for the custom FBO
-unsigned renderFBO = 0;
-unsigned renderColorBuffer = 0;
-unsigned renderDepthBuffer = 0;
 
 
 // Scales
@@ -323,7 +324,7 @@ void draw(void)
 
 void geometry_render_pass()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, renderFBO);
+	g_gbuffer.bind_framebuffer();
 	drawSkySphere();
 	drawSun();
 	drawSolarsystem();
@@ -333,6 +334,7 @@ void geometry_render_pass()
 	}
 	draw_saturn_rings();
 	draw_uranus_rings();
+	g_gbuffer.unbind_framebuffer();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -342,10 +344,13 @@ void screen_quad_pass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(screenQuadShaderProgram);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
+	g_gbuffer.bind_texture(GL_TEXTURE0, GBuffer::GBUFFER_TEXTURE_COLOR);
+	g_gbuffer.bind_texture(GL_TEXTURE1, GBuffer::GBUFFER_TEXTURE_NORMAL);
+	g_gbuffer.bind_texture(GL_TEXTURE2, GBuffer::GBUFFER_TEXTURE_POSITION);
 
 	glUniform1i(screenQuadShaderColorTextureUniformLocation, 0);
+	glUniform1i(screenQuadShaderNormalTextureUniformLocation, 1);
+	glUniform1i(screenQuadShaderPositionTextureUniformLocation, 2);
 	glUniform2i(screenQuadShaderScreenDimensionsUniformLocation, windowWidth, windowHeight);
 	
 	glUniform1i(screenQuadShaderGreyscaleUniformLocation, greyscale);
@@ -477,19 +482,28 @@ void drawSun()
 
 	//scale the sun
 	glm::mat4 model_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(g_sunScale) );
+	
+	//calculate the normal transfomrations from modelview matrix
+    glm::mat4 normalMatrix = glm::mat4(1.0f);
+	normalMatrix = g_viewMatrix*model_matrix;
+	normalMatrix = glm::inverse(normalMatrix);
+	normalMatrix = glm::transpose(normalMatrix);
+	glUniformMatrix4fv(sunNormalMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(normalMatrix) );
+
+	// transfer model matrix to shader by the associated uniform location
+	glUniformMatrix4fv(sunModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(model_matrix) );
+
 	//draw the geometry
 	glUniform1i(sunColorUniformLocation0, 0);
 	glUniform1i(sunColorUniformLocation1, 1);
 	glUniform1f(sunTimeUniformLocation, g_elapsed_virtual_time);
+
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, sunTexture0);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, sunTexture1);
-
-	// transfer model matrix to shader by the associated uniform location
-	glUniformMatrix4fv(sunModelMatrixUniformLocation, 1, GL_FALSE, glm::value_ptr(model_matrix) );
 
 	//bind the planet geometry (the VAO!)
 	glBindVertexArray(vertexArrayObject);
@@ -1451,6 +1465,7 @@ void setupShader()
 
 	sunModelMatrixUniformLocation      = glGetUniformLocation(sunShaderProgram, "ModelMatrix");
 	sunViewMatrixUniformLocation       = glGetUniformLocation(sunShaderProgram, "ViewMatrix");
+	sunNormalMatrixUniformLocation     = glGetUniformLocation(sunShaderProgram, "NormalMatrix");
 	sunProjectionMatrixUniformLocation = glGetUniformLocation(sunShaderProgram, "ProjectionMatrix");
 	sunColorUniformLocation0           = glGetUniformLocation(sunShaderProgram, "ColorTexture0");
 	sunColorUniformLocation1           = glGetUniformLocation(sunShaderProgram, "ColorTexture1");
@@ -1468,6 +1483,8 @@ void setupShader()
 	skyColorUniformLocation            = glGetUniformLocation(skyShaderProgram, "ColorTexture");
 
 	screenQuadShaderColorTextureUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ColorTexture");
+	screenQuadShaderNormalTextureUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "NormalTexture");
+	screenQuadShaderPositionTextureUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "PositionTexture");
 	screenQuadShaderScreenDimensionsUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "ScreenDimensions");
 	screenQuadShaderGreyscaleUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "greyscale");
 	screenQuadShaderHorizontalMirrowedUniformLocation = glGetUniformLocation(screenQuadShaderProgram, "horizontal_mirrowed");
@@ -1483,35 +1500,7 @@ void setupShader()
 
 void setupFrameBuffer()
 {
-	// Create own Framebuffer
-	glGenFramebuffers(1, &renderFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, renderFBO);
-
-	// Generate the Color Texture 
-	glGenTextures(1, &renderColorBuffer);
-	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, windowWidth, windowHeight, 
-				 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-
-	// bind the Color Attachment to the Framebuffer
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderColorBuffer, 0);
-
-	// generate Depth Buffer
-	glGenRenderbuffers(1, &renderDepthBuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, renderDepthBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, windowWidth, windowHeight);
-
-	// bind the depth buffer to the Framebuffer
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderDepthBuffer);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	g_gbuffer = GBuffer(windowWidth, windowHeight);
 }
 
 
@@ -1858,11 +1847,7 @@ void idleFunction(void)
 /////////////////////////////////////////////////////////////////////////////////////////
 void resizeFBOtextures()
 {
-	glBindTexture(GL_TEXTURE_2D, renderColorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, windowWidth, windowHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-	
-	glBindTexture(GL_TEXTURE_2D, renderDepthBuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, windowWidth, windowHeight);
+	g_gbuffer.resize(windowWidth, windowHeight);
 }
 /////////////////////////////////////////////////////////////////////////////////////////
 

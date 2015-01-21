@@ -4,8 +4,12 @@ uniform mat4 ViewMatrix;
 uniform vec3 OrbitColor;
 uniform vec3 LightPosition;
 
-out vec4 out_Color;
-in  vec3 passed_vs_position;
+layout(location=0) out vec4 out_Color;
+layout(location=1) out vec4 out_Normal;
+layout(location=2) out vec4 out_Position;
+
+in vec3 passed_ws_position;
+in vec3 passed_vs_position;
 
 float ka = 0.0f;
 float sun_inten = 1.0f;
@@ -28,6 +32,8 @@ void main(void)
 
     total = ka + sun_part + light_part;
     out_Color = vec4(total * OrbitColor, 1.0);
+    out_Normal = vec4(0.0, 0.0, 0.0, 0.0);
+    out_Position = vec4(passed_ws_position, 0.0);
 }
 
 

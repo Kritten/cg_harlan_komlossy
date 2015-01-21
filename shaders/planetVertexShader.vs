@@ -7,6 +7,7 @@ layout(location=3) in vec3 in_Bitangent;
 
 out vec4 passed_normal;
 out vec3 passed_vs_position;
+out vec3 passed_ws_position;
 out vec2 passed_tex_coord;
 out vec3 passed_tangent;
 out vec3 passed_bitangent;
@@ -30,8 +31,11 @@ void main(void)
 
 	vec4 vertexPos = vec4(tmp_position, 1.0);
 		
-	vec4 vs_position = (ViewMatrix * ModelMatrix) * vertexPos;
-	passed_vs_position = vec3(vs_position.xyz);
+	vec4 ws_position = ModelMatrix * vertexPos;
+	passed_ws_position = vec3(ws_position.xyz) / ws_position.w;
+
+	vec4 vs_position = ViewMatrix * ws_position;
+	passed_vs_position = vec3(vs_position.xyz) / vs_position.w;
 	
 	passed_tex_coord = in_TexCoord;
 

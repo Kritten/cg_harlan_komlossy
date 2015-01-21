@@ -7,6 +7,8 @@ uniform int vertical_mirrowed;
 uniform int blur;
 
 uniform sampler2D ColorTexture;
+uniform sampler2D NormalTexture;
+uniform sampler2D PositionTexture;
 
 layout (location = 0) out vec4 out_Color;
 
@@ -31,7 +33,7 @@ void main(void)
 		
 	}
 
-	vec3 texture_color = texture2D(ColorTexture, tex_coords ).rgb;
+	vec3 texture_color = texture2D(PositionTexture, tex_coords ).rgb;
 	vec3 color = vec3(texture_color);
 
 	if(blur == 1)

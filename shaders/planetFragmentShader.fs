@@ -3,6 +3,7 @@
 
 in vec4 passed_normal;
 in vec3 passed_vs_position;
+in vec3 passed_ws_position;
 in vec2 passed_tex_coord;
 in vec3 passed_tangent;
 in vec3 passed_bitangent;
@@ -17,8 +18,9 @@ uniform int ShadingMode; // 1: Normal Phong Shading   2: Cell Shading
 uniform vec3 LightPosition;
 uniform mat4 NormalMatrix;
 
-out vec4 out_Color;
-
+layout(location=0) out vec4 out_Color;
+layout(location=1) out vec4 out_Normal;
+layout(location=2) out vec4 out_Position;
 
 // Globals
 float ka = 0.06f;
@@ -30,7 +32,7 @@ int n = 30;
 
 float distance_func(vec3 vector_1, vec3 vector_2, float faktor)
 {
-	return faktor/length(vector_2 - vector_1);
+    return faktor/length(vector_2 - vector_1);
 }
 
 float cell_shading_remap(float value)
@@ -54,6 +56,7 @@ void main(void)
 {
     float total = 0.0;
     vec3 vec_to_fragment = normalize(passed_vs_position);
+
 
     if (ShadingMode == 2)
     {
@@ -115,6 +118,8 @@ void main(void)
     // TOTAL LIGHTING
     total = ambient + total_sun + total_lightsource;
    
+    out_Normal = passed_normal;
+    out_Position = vec4(passed_ws_position, 1.0);
 
     if (ShadingMode == 1)
     {
