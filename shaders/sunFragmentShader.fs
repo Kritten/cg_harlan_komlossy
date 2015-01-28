@@ -22,7 +22,7 @@ void main(void)
     vec3 texture_Color0 = texture2D(ColorTexture0, passed_tex_coord).xyz;
     vec3 texture_Color1 = texture2D(ColorTexture1, passed_tex_coord).xyz;
     
-    vec3 total_Color = 2.7*texture_Color0 + 0.4*texture_Color1;
+    vec3 total_Color = 15.7*texture_Color0 + 0.8*texture_Color1;
 
     out_Color = vec4(total_Color, 1.0);
     out_Normal = vec4(passed_normal.xyz, 1.0);

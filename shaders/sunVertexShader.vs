@@ -19,11 +19,11 @@ uniform sampler2D ColorTexture0;
 
 void main(void)
 {
-	vec2 tex = vec2(in_TexCoord.x + Time*0.1, in_TexCoord.y+ Time*0.2);
+	vec2 tex = vec2(in_TexCoord.x, in_TexCoord.y+ Time*0.20);
 	vec3 texture_Specular = texture2D(ColorTexture0, tex).xyz; //specularmapa
 	float texture_Specular_exponent = (texture_Specular.x + texture_Specular.y + texture_Specular.z) / 10.0f ;
 
-	vec3 tmp_position = in_Position + texture_Specular_exponent * in_Position;
+	vec3 tmp_position = in_Position + 2.0 * texture_Specular_exponent * in_Position;
 
 	vec4 vertexPos = vec4(tmp_position, 1.0);
 	
@@ -33,7 +33,7 @@ void main(void)
 	vec4 vs_position = ViewMatrix * ws_position;
 	passed_vs_position = vec3(vs_position.xyz) / vs_position.w;
 	
-	passed_tex_coord = in_TexCoord;
+	passed_tex_coord = tex;
 
 	passed_normal = normalize(NormalMatrix * vec4(vertexPos.xyz , 0.0));
 	passed_normal = vec4(normalize(passed_normal.xyz), 0.0);

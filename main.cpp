@@ -101,7 +101,6 @@ unsigned viewMatrixUniformLocation = 0;
 unsigned normalMatrixUniformLocation  = 0;
 unsigned planetColorUniformLocation = 0;
 unsigned shadingModeUniformLocation = 0;
-unsigned lightPositionUniformLocation = 0;
 
 unsigned sunProjectionMatrixUniformLocation = 0;
 unsigned sunModelMatrixUniformLocation  = 0;
@@ -115,7 +114,6 @@ unsigned orbitProjectionMatrixUniformLocation = 0;
 unsigned orbitModelMatrixUniformLocation  = 0;
 unsigned orbitViewMatrixUniformLocation = 0;
 unsigned orbitColorUniformLocation     = 0;
-unsigned orbitLightPositionUniformLocation = 0;
 
 unsigned skyModelMatrixUniformLocation  = 0;
 unsigned skyViewMatrixUniformLocation = 0;
@@ -752,11 +750,7 @@ void drawSolarsystem()
     modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_europaRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
     modelTransformationStack.pushMatrix(glm::translate(glm::mat4(1.0f), g_jupiterTranslate ) );
     modelTransformationStack.pushMatrix(glm::rotate(glm::mat4(1.0f), (float)(g_jupiterRotation), glm::vec3(0.0f, 1.0f, 0.0f) ) );
-    glUseProgram(orbitShaderProgram);
-    glUniform3f(orbitLightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
 	glUseProgram(shaderProgram);
-    glUniform3f(lightPositionUniformLocation, modelTransformationStack.topMatrix()[3][0], modelTransformationStack.topMatrix()[3][1], modelTransformationStack.topMatrix()[3][2]);
-    modelTransformationStack.clear();
 
 	glUniform1i(planetColorUniformLocation, 0);
 	glUniform1i(normalColorUniformLocation, 1);
@@ -1456,7 +1450,6 @@ void setupShader()
 	projectionMatrixUniformLocation = glGetUniformLocation(shaderProgram, "ProjectionMatrix");
 	normalMatrixUniformLocation     = glGetUniformLocation(shaderProgram, "NormalMatrix");
 	shadingModeUniformLocation      = glGetUniformLocation(shaderProgram, "ShadingMode");
-	lightPositionUniformLocation 	= glGetUniformLocation(shaderProgram, "LightPosition");
 	planetColorUniformLocation 	 	= glGetUniformLocation(shaderProgram, "ColorTexture");
 	normalColorUniformLocation      = glGetUniformLocation(shaderProgram, "NormalMapTexture");
 	glossColorUniformLocation       = glGetUniformLocation(shaderProgram, "GlossMapTexture");
@@ -1475,7 +1468,6 @@ void setupShader()
 	orbitViewMatrixUniformLocation       = glGetUniformLocation(orbitShaderProgram, "ViewMatrix");
 	orbitProjectionMatrixUniformLocation = glGetUniformLocation(orbitShaderProgram, "ProjectionMatrix");
 	orbitColorUniformLocation            = glGetUniformLocation(orbitShaderProgram, "OrbitColor");
-	orbitLightPositionUniformLocation 	 = glGetUniformLocation(orbitShaderProgram, "LightPosition");
 
 	skyModelMatrixUniformLocation      = glGetUniformLocation(skyShaderProgram, "ModelMatrix");
 	skyViewMatrixUniformLocation       = glGetUniformLocation(skyShaderProgram, "ViewMatrix");

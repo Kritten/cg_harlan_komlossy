@@ -12,7 +12,8 @@ layout(location=2) out vec4 out_Position;
 void main(void)
 {
 	vec3 textureColor = texture2D(ColorTexture, passed_tex_coord).xyz;
-	textureColor = 0.3 * textureColor;
+	textureColor = 0.5 * textureColor;
 	out_Position = vec4(0.0, 0.0, 0.0, 0.0);
+	out_Normal = vec4(0.0, 0.0, 0.0, 0.0);
     out_Color = vec4(textureColor, 1.0);
 }
